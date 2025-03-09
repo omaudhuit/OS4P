@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OS4P Calculator</title>
+    <script>
+        async function calculate() {
+            let formData = new FormData(document.getElementById("calcForm"));
+            let response = await fetch("/", { method: "POST", body: formData });
+            let data = await response.json();
+
+            document.getElementById("co2_savings").innerText = "CO₂ Savings: " + data.co2_savings_all_outposts.toFixed(2) + " tonnes";
+            document.getElementById("monthly_fee").innerText = "Monthly Fee per Unit: €" + data.monthly_fee_unit.toFixed(2);
+        }
+    </script>
+</head>
+<body>
+    <h2>OS4P Calculator</h2>
+    <form id="calcForm" onsubmit="event.preventDefault(); calculate();">
+        <label>Number of Outposts:</label> <input type="number" name="num_outposts" value="200"><br>
+        <label>Fuel Consumption (L/hr):</label> <input type="number" name="fuel_consumption" value="150"><br>
+        <label>Interest Rate (%):</label> <input type="number" name="interest_rate" value="4"><br>
+        <label>Loan Duration (Years):</label> <input type="number" name="loan_years" value="8"><br>
+        <label>SLA Premium (%):</label> <input type="number" name="sla_premium" value="10"><br>
+        <button type="submit">Calculate</button>
+    </form>
+    <h3 id="co2_savings"></h3>
+    <h3 id="monthly_fee"></h3>
+</body>
+</html>
