@@ -372,7 +372,7 @@ def main():
     sensitivity_params = {}
     
     if "num_outposts" in selected_params:
-        sensitivity_params["num_outposts"] = np.arange(1, 21, 2)  # 1, 3, 5, ..., 19
+        sensitivity_params["num_outposts"] = np.arange(45, 200, 5)  # 1, 3, 5, ..., 19
     
     if "fuel_consumption" in selected_params:
         sensitivity_params["fuel_consumption"] = np.arange(5, 105, 10)  # 5, 15, 25, ..., 95
