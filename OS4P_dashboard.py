@@ -45,6 +45,8 @@ def calculate_os4p(num_outposts, fuel_consumption, interest_rate, loan_years, sl
         "co2_savings_lifetime": co2_savings_lifetime,
         "monthly_debt_payment": monthly_debt_payment,
         "monthly_fee_unit": monthly_fee_unit
+        "cost_efficiency_per_ton": cost_efficiency_1,
+        "cost_efficiency_lifetime": cost_efficiency_2
     }
 
 def sensitivity_analysis_co2(base_params, sensitivity_params):
@@ -347,6 +349,10 @@ def main():
     
     # Display base case metrics
     st.header("Base Case Results")
+
+    st.write("DEBUG: Base Results Keys:", base_results.keys())
+    st.write("DEBUG: Full Base Results:", base_results)
+
 
     col1, col2, col3 = st.columns(3)
 
