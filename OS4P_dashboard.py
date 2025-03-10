@@ -517,10 +517,27 @@ def main():
     # Display comprehensive results in the main area
     st.header("Base Case Results")
     
-    # Create tabs for organized display
-    tab1, tab2, tab3, tab4 = st.tabs(["Overview", "Financial Details", "Visualizations", "Sensitivity Analysis"])
+    # Create tabs for organized display, including the new 'Introduction' tab
+    tab_intro, tab_overview, tab_financial, tab_visualizations, tab_sensitivity = st.tabs(
+        ["Introduction", "Overview", "Financial Details", "Visualizations", "Sensitivity Analysis"]
+    )
     
-    with tab1:
+    with tab_intro:
+        st.header("Introduction")
+        st.markdown("""
+        **Welcome to the OS4P Interactive Dashboard!**
+
+        This dashboard is designed to help you evaluate and optimize your OS4P system by combining both environmental and financial metrics. With this tool you can:
+
+        - **Assess Environmental Impact:** Compare CO₂ emissions between traditional manned operations and advanced autonomous systems.
+        - **Understand Financials:** Dive into detailed CAPEX and OPEX breakdowns along with financing structures.
+        - **Visualize Key Metrics:** Leverage interactive charts to see cost breakdowns, emissions comparisons, and more.
+        - **Perform Sensitivity Analyses:** Explore how changes in various parameters affect overall system performance and CO₂ savings.
+
+        Use the sidebar to input your specific system parameters, then navigate through the tabs to gain insights into your project’s potential.
+        """)
+
+    with tab_overview:
         # CO2 metrics
         st.subheader("Environmental Impact")
         col1, col2, col3 = st.columns(3)
@@ -608,7 +625,7 @@ def main():
             score_lifetime_percentage = (results['innovation_fund_score_lifetime'] / 12) * 100
             st.progress(score_lifetime_percentage / 100)
     
-    with tab2:
+    with tab_financial:
         # Financial details
         st.subheader("Financing Details")
         col1, col2, col3 = st.columns(3)
@@ -644,7 +661,7 @@ def main():
         opex_df["Percentage"] = (opex_df["Amount (€)"] / opex_df["Amount (€)"].sum() * 100).round(1).astype(str) + '%'
         st.dataframe(opex_df)
     
-    with tab3:
+    with tab_visualizations:
         # Cost breakdown visualization
         st.subheader("Cost Breakdown Visualization")
         if "detailed_capex_breakdown" in results:
@@ -660,7 +677,7 @@ def main():
         co2_chart = create_co2_comparison_chart(results["co2_factors"])
         st.plotly_chart(co2_chart)
     
-    with tab4:
+    with tab_sensitivity:
         st.subheader("CO₂ Emissions Sensitivity Analysis")
         
         # Parameter selection
