@@ -119,26 +119,9 @@ def main():
         opex_security = st.number_input("Security OPEX", min_value=5000, max_value=50000, value=20000, step=5000, format="%d")
 
     # ✅ Store user inputs explicitly in a dictionary
-    params = {
-        "num_outposts": num_outposts,
-        "large_patrol_fuel": large_patrol_fuel,
-        "rib_fuel": rib_fuel,
-        "small_patrol_fuel": small_patrol_fuel,
-        "hours_per_day_base": hours_per_day_base,
-        "interest_rate": interest_rate,
-        "loan_years": loan_years,
-        "sla_premium": sla_premium,
-        "operating_days_per_year": operating_days_per_year,
-        "co2_factor": co2_factor,
-        "maintenance_emissions": maintenance_emissions,
-        "capex_microgrid": capex_microgrid,
-        "capex_drones": capex_drones,
-        "capex_bos": capex_bos,
-        "opex_maintenance": opex_maintenance,
-        "opex_communications": opex_communications,
-        "opex_security": opex_security
-    }
+    params = locals().copy()
 
+    # Calculate results
     base_results = calculate_os4p(params)
 
 if __name__ == "__main__":
