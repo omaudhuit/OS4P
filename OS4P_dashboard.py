@@ -103,7 +103,9 @@ def generate_sensitivity_report(sensitivity_data, base_params):
         elif param_name == "sla_premium":
             base_case_index = list(df["param_value"]).index(base_params["sla_premium"])
         
+        base_case_index = int(base_case_index)  # Convert to integer
         base_case = df.iloc[base_case_index]
+
         
         df["pct_change_per_outpost"] = (df["co2_savings_per_outpost"] / base_case["co2_savings_per_outpost"] - 1) * 100
         df["pct_change_all_outposts"] = (df["co2_savings_all_outposts"] / base_case["co2_savings_all_outposts"] - 1) * 100
