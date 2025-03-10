@@ -93,7 +93,7 @@ def generate_sensitivity_report(sensitivity_data, base_params):
         # Calculate percentage changes from base case
         base_case_index = None
         if param_name == "num_outposts":
-            base_case_index = list(df["param_value"]).index(base_params["num_outposts"])
+            base_case_index = next((i for i, v in enumerate(df["param_value"]) if v == base_params.get("num_outposts", -1)), None)
         elif param_name == "fuel_consumption":
             base_case_index = list(df["param_value"]).index(base_params["fuel_consumption"])
         elif param_name == "loan_years":
