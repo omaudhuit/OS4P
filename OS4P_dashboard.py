@@ -7,6 +7,24 @@ import plotly.express as px
 
 st.set_page_config(page_title="OS4P Interactive Dashboard", layout="wide")
 
+def calculate_innovation_fund_score(cost_efficiency_ratio):
+    """
+    Calculate Innovation Fund score based on cost efficiency ratio
+    
+    For INNOVFUND-2024-NZT-PILOTS topic:
+    - If cost efficiency ratio is <= 2000 EUR/t CO2-eq: 12 - (12 x (ratio / 2000))
+    - If cost efficiency ratio is > 2000 EUR/t CO2-eq: 0 points
+    
+    Returns rounded to nearest half point, min 0, max 12
+    """
+    if cost_efficiency_ratio <= 2000:
+        score = 12 - (12 * (cost_efficiency_ratio / 2000))
+        # Round to nearest half point
+        score = round(score * 2) / 2
+        return max(0, score)
+    else:
+        return 0
+
 def calculate_os4p(params):
     # Extracting user-defined constants
     num_outposts = params["num_outposts"]
@@ -79,6 +97,10 @@ def calculate_os4p(params):
     cost_efficiency_per_ton = total_grant / co2_savings_all_outposts if co2_savings_all_outposts > 0 else float('inf')
     cost_efficiency_lifetime = total_grant / co2_savings_lifetime if co2_savings_lifetime > 0 else float('inf')
     
+    # Innovation Fund Score calculation
+    innovation_fund_score = calculate_innovation_fund_score(cost_efficiency_per_ton)
+    innovation_fund_score_lifetime = calculate_innovation_fund_score(cost_efficiency_lifetime)
+    
     # Total Cost of Ownership (TCO)
     tco = total_capex + lifetime_opex
     tco_per_outpost = tco / num_outposts
@@ -122,6 +144,8 @@ def calculate_os4p(params):
         # Efficiency Metrics
         "cost_efficiency_per_ton": cost_efficiency_per_ton,
         "cost_efficiency_lifetime": cost_efficiency_lifetime,
+        "innovation_fund_score": innovation_fund_score,
+        "innovation_fund_score_lifetime": innovation_fund_score_lifetime,
         
         # Project Financing 
         "pilot_markup": pilot_markup,
@@ -228,7 +252,9 @@ def perform_sensitivity_analysis(base_params, sensitivity_param, range_values):
             'CO2_Savings_Per_Outpost': result['co2_savings_per_outpost'],
             'CO2_Savings_All_Outposts': result['co2_savings_all_outposts'],
             'Manned_CO2_Emissions': result['manned_co2_emissions'] / 1000,  # Convert to tonnes
-            'Autonomous_CO2_Emissions': result['autonomous_co2_emissions'] / 1000  # Convert to tonnes
+            'Autonomous_CO2_Emissions': result['autonomous_co2_emissions'] / 1000,  # Convert to tonnes
+            'Cost_Efficiency': result['cost_efficiency_per_ton'],
+            'Innovation_Fund_Score': result['innovation_fund_score']
         })
     
     return pd.DataFrame(results)
@@ -249,6 +275,56 @@ def create_sensitivity_chart(sensitivity_data, param_name, y_column, y_label):
     fig.update_layout(
         xaxis_title=param_name,
         yaxis_title=y_label,
+        hovermode="x unified"
+    )
+    
+    return fig
+
+def create_innovation_fund_score_chart(sensitivity_data, param_name):
+    """
+    Create a chart showing how Innovation Fund score changes with parameter values
+    """
+    # Calculate Innovation Fund scores for each cost efficiency value
+    innovation_scores = []
+    
+    for index, row in sensitivity_data.iterrows():
+        # Calculate cost efficiency for this row
+        if row['CO2_Savings_All_Outposts'] > 0:
+            # Using a proxy for total_grant / co2_savings since we don't have total_grant in sensitivity data
+            # This is just for visualization purposes to show the trend
+            ce_ratio = 500000 / row['CO2_Savings_All_Outposts']  # Approximate grant amount / CO2 savings
+            score = calculate_innovation_fund_score(ce_ratio)
+        else:
+            score = 0
+            
+        innovation_scores.append(score)
+    
+    # Add scores to the data
+    score_data = sensitivity_data.copy()
+    score_data['Innovation_Fund_Score'] = innovation_scores
+    
+    # Create chart
+    fig = px.line(
+        score_data,
+        x='Parameter_Value',
+        y='Innovation_Fund_Score',
+        markers=True,
+        title=f'Innovation Fund Score Sensitivity to {param_name}',
+        labels={'Parameter_Value': param_name, 'Innovation_Fund_Score': 'Innovation Fund Score (0-12)'}
+    )
+    
+    # Add reference lines for score thresholds
+    fig.add_hline(y=9, line_dash="dash", line_color="green", annotation_text="Excellent (≥9)", 
+                 annotation_position="top right")
+    fig.add_hline(y=6, line_dash="dash", line_color="orange", annotation_text="Good (≥6)", 
+                 annotation_position="top right")
+    fig.add_hline(y=3, line_dash="dash", line_color="red", annotation_text="Marginal (≥3)", 
+                 annotation_position="top right")
+    
+    fig.update_layout(
+        xaxis_title=param_name,
+        yaxis_title='Innovation Fund Score',
+        yaxis=dict(range=[0, 12]),
         hovermode="x unified"
     )
     
@@ -448,13 +524,65 @@ def main():
             st.metric("Total Cost of Ownership (€)", f"{results['tco']:,.0f}")
             st.metric("TCO per Outpost (€)", f"{results['tco_per_outpost']:,.0f}")
         
-        # Efficiency metrics
-        st.subheader("Efficiency Metrics")
+        # Efficiency and Innovation Fund metrics
+        st.subheader("Efficiency Metrics & Innovation Fund Score")
+        
+        # Show Innovation Fund scoring explanation
+        with st.expander("Innovation Fund Scoring Criteria"):
+            st.markdown("""
+            **Innovation Fund Scoring for Cost Efficiency (INNOVFUND-2024-NZT-PILOTS)**
+            
+            The Innovation Fund uses the following formula to score projects based on cost efficiency:
+            
+            - If cost efficiency ratio ≤ 2000 EUR/t CO₂-eq:  
+              Score = 12 - (12 × (cost efficiency ratio / 2000))
+            
+            - If cost efficiency ratio > 2000 EUR/t CO₂-eq:  
+              Score = 0
+            
+            The result is rounded to the nearest half point. The minimum score is 0, maximum is 12.
+            
+            *A lower cost efficiency ratio (less EUR per tonne of CO₂ saved) results in a higher score.*
+            """)
+        
         col1, col2 = st.columns(2)
         with col1:
-            st.metric("Cost per Tonne CO₂ Saved (€/tonne/year)", f"{results['cost_efficiency_per_ton']:,.0f}")
+            ce_yearly = results['cost_efficiency_per_ton']
+            ce_yearly_str = f"{ce_yearly:,.0f}" if ce_yearly != float('inf') else "∞"
+            st.metric("Cost per Tonne CO₂ Saved (€/tonne/year)", ce_yearly_str)
+            
+            # Calculate Innovation Fund score color
+            if results['innovation_fund_score'] >= 9:
+                score_color = "green"
+            elif results['innovation_fund_score'] >= 6:
+                score_color = "orange"
+            else:
+                score_color = "red"
+            
+            st.markdown(f"<h3 style='color: {score_color}'>Innovation Fund Score: {results['innovation_fund_score']}/12</h3>", unsafe_allow_html=True)
+            
+            # Create progress bar for Innovation Fund score
+            score_percentage = (results['innovation_fund_score'] / 12) * 100
+            st.progress(score_percentage / 100)
+        
         with col2:
-            st.metric("Lifetime Cost per Tonne CO₂ Saved (€/tonne)", f"{results['cost_efficiency_lifetime']:,.0f}")
+            ce_lifetime = results['cost_efficiency_lifetime']
+            ce_lifetime_str = f"{ce_lifetime:,.0f}" if ce_lifetime != float('inf') else "∞"
+            st.metric("Lifetime Cost per Tonne CO₂ Saved (€/tonne)", ce_lifetime_str)
+            
+            # Calculate lifetime Innovation Fund score color
+            if results['innovation_fund_score_lifetime'] >= 9:
+                score_lifetime_color = "green"
+            elif results['innovation_fund_score_lifetime'] >= 6:
+                score_lifetime_color = "orange"
+            else:
+                score_lifetime_color = "red"
+            
+            st.markdown(f"<h3 style='color: {score_lifetime_color}'>Lifetime Score: {results['innovation_fund_score_lifetime']}/12</h3>", unsafe_allow_html=True)
+            
+            # Create progress bar for lifetime Innovation Fund score
+            score_lifetime_percentage = (results['innovation_fund_score_lifetime'] / 12) * 100
+            st.progress(score_lifetime_percentage / 100)
     
     with tab2:
         # Financial details
@@ -598,6 +726,25 @@ def main():
                 sensitivity_param_options[selected_param]
             )
             st.plotly_chart(emissions_chart, use_container_width=True)
+        
+        # Innovation Fund Score sensitivity chart
+        st.markdown("#### Innovation Fund Score Sensitivity")
+        
+        # Show Innovation Fund score chart
+        innovation_score_chart = create_innovation_fund_score_chart(
+            sensitivity_results,
+            sensitivity_param_options[selected_param]
+        )
+        st.plotly_chart(innovation_score_chart, use_container_width=True)
+        
+        # Add explanation
+        st.markdown("""
+        This chart shows how the Innovation Fund score changes with the parameter value. 
+        Higher scores (closer to 12) improve chances of funding. Scores are calculated based on the 
+        cost efficiency ratio (EUR/tonne CO₂ saved) using the formula:
+        
+        **Score = 12 - (12 × cost efficiency ratio / 2000)** when ratio ≤ 2000 EUR/t, **0** otherwise.
+        """)
         
         # Tornado chart for relative importance of different parameters
         st.subheader("Multi-Parameter Impact Analysis")
