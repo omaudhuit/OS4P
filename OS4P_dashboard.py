@@ -545,13 +545,11 @@ Key Components:
 
 Renewable Energy Generation: Each OS4P pylon incorporates a hybrid renewable energy generation system comprising:
 
-Solar PV System: A 10 kWp solar photovoltaic installation capable of producing approximately 15,000 kWh annually.
+ - Solar PV System: A 10 kWp solar photovoltaic installation capable of producing approximately 15,000 kWh annually.
 
-Wind Turbine: A complementary 3 kW wind turbine that generates approximately 7,500 kWh per year, bringing total renewable generation per pylon to approximately 22,500 kWh annually.
+ - Wind Turbine: A complementary 3 kW wind turbine that generates approximately 7,500 kWh per year, bringing total renewable generation per pylon to approximately 22,500 kWh annually.
 
-Energy Storage System:
-
-Equipped with a robust 30 kWh battery system, each sentinel ensures continuous power supply, resilience during periods of limited renewable generation, and effective load management.
+ - Energy Storage System: Equipped with a robust 30 kWh battery system, each sentinel ensures continuous power supply, resilience during periods of limited renewable generation, and effective load management.
 
         Drone-Based Autonomous Surveillance
 
