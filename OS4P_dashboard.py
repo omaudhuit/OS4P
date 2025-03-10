@@ -389,7 +389,7 @@ def main():
         st.header("User Inputs")
 
         st.subheader("System Configuration")
-        num_outposts = st.number_input("Number of Outposts", min_value=1, max_value=200, value=10, step=1, format="%d")
+        num_outposts = st.number_input("Number of Outposts", min_value=1, max_value=1000, value=10, step=1, format="%d")
         
         st.subheader("Fuel Consumption (Liters per Hour)")
         large_patrol_fuel = st.number_input("Large Patrol Boat Fuel", min_value=50, max_value=300, value=150, step=10, format="%d")
