@@ -114,25 +114,33 @@ def main():
         opex_security = st.number_input("Security OPEX", min_value=5000, max_value=50000, value=20000, step=5000, format="%d")
 
     # Store user inputs in dictionary
-    params = {key: value for key, value in locals().items() if key in calculate_os4p.__code__.co_varnames}
-    
+    params = {
+        "num_outposts": num_outposts,
+        "large_patrol_fuel": large_patrol_fuel,
+        "rib_fuel": rib_fuel,
+        "small_patrol_fuel": small_patrol_fuel,
+        "hours_per_day_base": hours_per_day_base,
+        "interest_rate": interest_rate,
+        "loan_years": loan_years,
+        "sla_premium": sla_premium,
+        "operating_days_per_year": operating_days_per_year,
+        "co2_factor": co2_factor,
+        "maintenance_emissions": maintenance_emissions,
+        "capex_microgrid": capex_microgrid,
+        "capex_drones": capex_drones,
+        "capex_bos": capex_bos,
+        "opex_maintenance": opex_maintenance,
+        "opex_communications": opex_communications,
+        "opex_security": opex_security
+    }
+
     # Calculate results
     base_results = calculate_os4p(params)
 
     # Display results
     st.header("Base Case Results")
-
-    st.metric("CO₂ Savings per Outpost (tonnes/year)", f"{base_results['co2_savings_per_outpost']:.1f}")
     st.metric("Total CAPEX (€)", f"€{base_results['total_capex']:,.0f}")
     st.metric("Total OPEX (€)", f"€{base_results['total_opex']:,.0f}")
-
-    # CAPEX Breakdown
-    st.header("CAPEX Breakdown")
-    st.dataframe(pd.DataFrame.from_dict(base_results["capex_breakdown"], orient='index', columns=["Amount (€)"]))
-
-    # OPEX Breakdown
-    st.header("OPEX Breakdown")
-    st.dataframe(pd.DataFrame.from_dict(base_results["opex_breakdown"], orient='index', columns=["Amount (€)"]))
 
 if __name__ == "__main__":
     main()
