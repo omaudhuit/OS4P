@@ -1,295 +1,4 @@
-with tab5:
-        st.header("Levelized Cost of Energy (LCOE) Analysis")
-        
-        # Explanation of LCOE
-        with st.expander("What is LCOE?"):
-            st.markdown("""
-            **Levelized Cost of Energy (LCOE)** represents the average cost per unit of electricity generated over the lifetime of an energy system. It is calculated by:
-            
-            1. Summing all lifetime costs (CAPEX and OPEX) in present value terms
-            2. Dividing by the total energy production in present value terms
-            
-            LCOE allows for comparison between different energy generation technologies regardless of their scale, lifetime, or capital cost structure.
-            
-            **Formula:**
-            
-            ```
-            LCOE = (Present Value of Total Lifetime Costs) / (Present Value of Total Lifetime Energy Production)
-            ```
-            
-            Lower LCOE values indicate more cost-effective energy generation.
-            """)
-        
-        # Display LCOE metrics
-        st.subheader("LCOE Results for Microgrid")
-        
-        # Main LCOE display
-        lcoe_value = results['lcoe']
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            # Format LCOE for display
-            if lcoe_value < 1:
-                lcoe_display = f"{lcoe_value:.3f} €/kWh"
-            else:
-                lcoe_display = f"{lcoe_value:.2f} €/kWh"
-                
-            st.metric("Levelized Cost of Energy", lcoe_display)
-            
-            # Compare to benchmarks
-            if lcoe_value <= 0.10:
-                st.success("Excellent - Competitive with utility-scale renewables")
-            elif lcoe_value <= 0.20:
-                st.info("Good - Competitive with residential solar")
-            elif lcoe_value <= 0.30:
-                st.warning("Moderate - Cheaper than diesel generation but higher than grid power")
-            else:
-                st.error("High - Consider optimizing the energy system design")
-        
-        with col2:
-            st.metric("Annual Energy Production", f"{results['annual_energy_production']:.0f} kWh")
-            st.metric("Energy System CAPEX", f"€{results['energy_capex']:,.0f}")
-            st.metric("Energy System OPEX (Annual)", f"€{results['energy_opex']:,.0f}")
-        
-        # Energy production breakdown
-        st.subheader("Energy Production Breakdown")
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            energy_pie = create_energy_production_chart(results["energy_breakdown"])
-            st.plotly_chart(energy_pie, use_container_width=True)
-        
-        with col2:
-            # Display energy production details
-            solar_percentage = (results['solar_annual_production'] / results['annual_energy_production']) * 100 if results['annual_energy_production'] > 0 else 0
-            wind_percentage = (results['wind_annual_production'] / results['annual_energy_production']) * 100 if results['annual_energy_production'] > 0 else 0
-            
-            st.metric("Solar Production", f"{results['solar_annual_production']:.0f} kWh/year ({solar_percentage:.1f}%)")
-            st.metric("Wind Production", f"{results['wind_annual_production']:.0f} kWh/year ({wind_percentage:.1f}%)")
-            
-            # Calculate capacity factors
-            solar_hours = results['solar_annual_production'] / params.get('solar_capacity_kw', 10)
-            wind_hours = results['wind_annual_production'] / params.get('wind_capacity_kw', 3)
-            
-            st.metric("Solar Equivalent Full Load Hours", f"{solar_hours:.0f} hours/year")
-            st.metric("Wind Equivalent Full Load Hours", f"{wind_hours:.0f} hours/year")
-        
-        # LCOE gauge chart
-        st.subheader("LCOE Comparison")
-        lcoe_gauge = create_lcoe_comparison_chart(lcoe_value)
-        st.plotly_chart(lcoe_gauge, use_container_width=True)
-        
-        # LCOE Sensitivity Analysis
-        st.subheader("LCOE Sensitivity Analysis")
-        
-        st.markdown("""
-        Explore how different parameters affect the LCOE of your microgrid system.
-        Select parameters to analyze and their ranges:
-        """)
-        
-        # Parameter selection
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            # First parameter selection
-            lcoe_param1 = st.selectbox(
-                "First Parameter:", 
-                ["solar_capacity_kw", "wind_capacity_kw", "interest_rate", "loan_years"],
-                format_func=lambda x: {
-                    "solar_capacity_kw": "Solar Capacity (kW)",
-                    "wind_capacity_kw": "Wind Capacity (kW)",
-                    "interest_rate": "Interest Rate (%)",
-                    "loan_years": "System Lifetime (years)"
-                }.get(x, x)
-            )
-            
-            # Define range based on selected parameter
-            if lcoe_param1 == "solar_capacity_kw":
-                p1_min, p1_max, p1_steps = 5, 20, 4
-            elif lcoe_param1 == "wind_capacity_kw":
-                p1_min, p1_max, p1_steps = 1, 6, 6
-            elif lcoe_param1 == "interest_rate":
-                p1_min, p1_max, p1_steps = 1, 10, 5
-            elif lcoe_param1 == "loan_years":
-                p1_min, p1_max, p1_steps = 5, 25, 5
-            
-            p1_min_val = st.number_input(f"Min {lcoe_param1}", value=float(p1_min), step=0.5)
-            p1_max_val = st.number_input(f"Max {lcoe_param1}", value=float(p1_max), step=0.5)
-        
-        with col2:
-            # Second parameter selection
-            lcoe_param2 = st.selectbox(
-                "Second Parameter:", 
-                ["wind_capacity_kw", "solar_capacity_kw", "interest_rate", "loan_years"],
-                index=1,
-                format_func=lambda x: {
-                    "solar_capacity_kw": "Solar Capacity (kW)",
-                    "wind_capacity_kw": "Wind Capacity (kW)",
-                    "interest_rate": "Interest Rate (%)",
-                    "loan_years": "System Lifetime (years)"
-                }.get(x, x)
-            )
-            
-            # Define range based on selected parameter
-            if lcoe_param2 == "solar_capacity_kw":
-                p2_min, p2_max, p2_steps = 5, 20, 4
-            elif lcoe_param2 == "wind_capacity_kw":
-                p2_min, p2_max, p2_steps = 1, 6, 6
-            elif lcoe_param2 == "interest_rate":
-                p2_min, p2_max, p2_steps = 1, 10, 5
-            elif lcoe_param2 == "loan_years":
-                p2_min, p2_max, p2_steps = 5, 25, 5
-            
-            p2_min_val = st.number_input(f"Min {lcoe_param2}", value=float(p2_min), step=0.5)
-            p2_max_val = st.number_input(f"Max {lcoe_param2}", value=float(p2_max), step=0.5)
-        
-        # Number of analysis points for each parameter
-        num_steps = st.slider("Analysis resolution (points per parameter)", min_value=3, max_value=10, value=5)
-        
-        # Run LCOE sensitivity analysis button
-        if st.button("Run LCOE Sensitivity Analysis"):
-            # Prepare parameter variations
-            variable_params = {
-                lcoe_param1: [p1_min_val, p1_max_val, num_steps],
-                lcoe_param2: [p2_min_val, p2_max_val, num_steps]
-            }
-            
-            # Run analysis
-            with st.spinner("Calculating LCOE sensitivity..."):
-                lcoe_sensitivity_results = perform_lcoe_sensitivity_analysis(params, variable_params)
-            
-            # Create heatmap of results
-            fig = px.density_heatmap(
-                lcoe_sensitivity_results, 
-                x=lcoe_param1, 
-                y=lcoe_param2, 
-                z="LCOE",
-                labels={
-                    lcoe_param1: {
-                        "solar_capacity_kw": "Solar Capacity (kW)",
-                        "wind_capacity_kw": "Wind Capacity (kW)",
-                        "interest_rate": "Interest Rate (%)",
-                        "loan_years": "System Lifetime (years)"
-                    }.get(lcoe_param1, lcoe_param1),
-                    lcoe_param2: {
-                        "solar_capacity_kw": "Solar Capacity (kW)",
-                        "wind_capacity_kw": "Wind Capacity (kW)",
-                        "interest_rate": "Interest Rate (%)",
-                        "loan_years": "System Lifetime (years)"
-                    }.get(lcoe_param2, lcoe_param2),
-                    "LCOE": "LCOE (€/kWh)"
-                },
-                title=f"LCOE Sensitivity to {lcoe_param1} and {lcoe_param2}",
-                color_continuous_scale="RdYlGn_r"  # Reversed scale (red = high LCOE, green = low LCOE)
-            )
-            
-            # Update layout for better readability
-            fig.update_layout(
-                height=500,
-                coloraxis_colorbar=dict(
-                    title="LCOE (€/kWh)"
-                )
-            )
-            
-            st.plotly_chart(fig, use_container_width=True)
-            
-            # Add interpretation
-            st.markdown("### Interpretation Guide")
-            st.markdown("""
-            - **Green areas** represent parameter combinations with **lower LCOE** (more cost-effective)
-            - **Red areas** represent parameter combinations with **higher LCOE** (less cost-effective)
-            - Use this analysis to identify optimal parameter combinations for your microgrid system
-            """)
-            
-            # Optimal point identification
-            min_lcoe_row = lcoe_sensitivity_results.loc[lcoe_sensitivity_results['LCOE'].idxmin()]
-            st.success(f"**Optimal configuration found:** {lcoe_param1} = {min_lcoe_row[lcoe_param1]:.2f}, {lcoe_param2} = {min_lcoe_row[lcoe_param2]:.2f}, yielding LCOE = {min_lcoe_row['LCOE']:.4f} €/kWh")
-        
-        # Single parameter LCOE sensitivity
-        st.subheader("Single Parameter LCOE Sensitivity")
-        
-        lcoe_single_param = st.selectbox(
-            "Parameter to analyze:", 
-            ["solar_capacity_kw", "wind_capacity_kw", "interest_rate", "loan_years", "battery_capacity_kwh"],
-            format_func=lambda x: {
-                "solar_capacity_kw": "Solar Capacity (kW)",
-                "wind_capacity_kw": "Wind Capacity (kW)",
-                "interest_rate": "Interest Rate (%)",
-                "loan_years": "System Lifetime (years)",
-                "battery_capacity_kwh": "Battery Capacity (kWh)"
-            }.get(x, x)
-        )
-        
-        # Define range based on selected parameter
-        if lcoe_single_param == "solar_capacity_kw":
-            single_min, single_max, single_default, single_step = 5, 30, params.get("solar_capacity_kw", 10), 2.5
-        elif lcoe_single_param == "wind_capacity_kw":
-            single_min, single_max, single_default, single_step = 0, 10, params.get("wind_capacity_kw", 3), 1
-        elif lcoe_single_param == "interest_rate":
-            single_min, single_max, single_default, single_step = 1, 15, params.get("interest_rate", 5), 1
-        elif lcoe_single_param == "loan_years":
-            single_min, single_max, single_default, single_step = 5, 25, params.get("loan_years", 10), 2
-        elif lcoe_single_param == "battery_capacity_kwh":
-            single_min, single_max, single_default, single_step = 10, 100, params.get("battery_capacity_kwh", 30), 10
-        
-        single_range_min = st.number_input(f"Minimum {lcoe_single_param}", min_value=float(single_min), max_value=float(single_max), value=float(single_min), step=float(single_step))
-        single_range_max = st.number_input(f"Maximum {lcoe_single_param}", min_value=float(single_min), max_value=float(single_max), value=float(single_max), step=float(single_step))
-        single_num_steps = st.slider("Number of analysis points", min_value=5, max_value=20, value=10)
-        
-        if st.button("Run Single Parameter Analysis"):
-            # Generate range values
-            if lcoe_single_param in ["loan_years"]:
-                range_values = np.linspace(single_range_min, single_range_max, int(single_num_steps)).astype(int)
-            else:
-                range_values = np.linspace(single_range_min, single_range_max, int(single_num_steps))
-            
-            # Perform sensitivity analysis
-            with st.spinner("Calculating sensitivity..."):
-                sensitivity_results = perform_sensitivity_analysis(params, lcoe_single_param, range_values)
-            
-            # Create line chart
-            fig = px.line(
-                sensitivity_results, 
-                x='Parameter_Value', 
-                y="LCOE",
-                markers=True,
-                title=f"LCOE Sensitivity to {lcoe_single_param}",
-                labels={
-                    'Parameter_Value': {
-                        "solar_capacity_kw": "Solar Capacity (kW)",
-                        "wind_capacity_kw": "Wind Capacity (kW)",
-                        "interest_rate": "Interest Rate (%)",
-                        "loan_years": "System Lifetime (years)",
-                        "battery_capacity_kwh": "Battery Capacity (kWh)"
-                    }.get(lcoe_single_param, lcoe_single_param),
-                    "LCOE": "LCOE (€/kWh)"
-                }
-            )
-            
-            # Update layout
-            fig.update_layout(
-                xaxis_title={
-                    "solar_capacity_kw": "Solar Capacity (kW)",
-                    "wind_capacity_kw": "Wind Capacity (kW)",
-                    "interest_rate": "Interest Rate (%)",
-                    "loan_years": "System Lifetime (years)",
-                    "battery_capacity_kwh": "Battery Capacity (kWh)"
-                }.get(lcoe_single_param, lcoe_single_param),
-                yaxis_title="LCOE (€/kWh)",
-                hovermode="x unified"
-            )
-            
-            st.plotly_chart(fig, use_container_width=True)
-            
-            # Find optimal point
-            min_lcoe_idx = sensitivity_results['LCOE'].idxmin()
-            min_lcoe = sensitivity_results.loc[min_lcoe_idx, 'LCOE']
-            optimal_param_value = sensitivity_results.loc[min_lcoe_idx, 'Parameter_Value']
-            
-            st.success(f"Optimal {lcoe_single_param} value: {optimal_param_value:.2f}, yielding LCOE = {min_lcoe:.4f} €/kWh")
-
-if __name__ == "__main__":
-    main()import streamlit as st
+import streamlit as st
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -316,45 +25,6 @@ def calculate_innovation_fund_score(cost_efficiency_ratio):
     else:
         return 0
 
-def calculate_lcoe(energy_capex, annual_opex, annual_energy_production, discount_rate, lifetime):
-    """
-    Calculate the Levelized Cost of Energy (LCOE)
-    
-    Parameters:
-    energy_capex (float): Capital expenditure for energy system
-    annual_opex (float): Annual operating expenses
-    annual_energy_production (float): Annual energy production in kWh
-    discount_rate (float): Discount rate as a percentage (e.g., 5.0 for 5%)
-    lifetime (int): System lifetime in years
-    
-    Returns:
-    float: LCOE in €/kWh
-    """
-    discount_rate = discount_rate / 100  # Convert percentage to decimal
-    
-    # Initialize present value sums
-    pv_costs = energy_capex  # Initial CAPEX is already in present value
-    pv_energy = 0
-    
-    # Calculate present values for each year
-    for year in range(1, lifetime + 1):
-        # Present value of OPEX for this year
-        pv_costs += annual_opex / ((1 + discount_rate) ** year)
-        
-        # Present value of energy production for this year
-        # Assume degradation of 0.5% per year for energy production
-        degradation_factor = (1 - 0.005) ** (year - 1)
-        yearly_energy = annual_energy_production * degradation_factor
-        pv_energy += yearly_energy / ((1 + discount_rate) ** year)
-    
-    # Calculate LCOE
-    if pv_energy > 0:
-        lcoe = pv_costs / pv_energy
-    else:
-        lcoe = float('inf')
-        
-    return lcoe
-
 def calculate_os4p(params):
     # Extracting user-defined constants
     num_outposts = params["num_outposts"]
@@ -379,14 +49,6 @@ def calculate_os4p(params):
     maintenance_opex = params["maintenance_opex"]
     communications_opex = params["communications_opex"]
     security_opex = params["security_opex"]
-    
-    # Energy system parameters (extract if available or use defaults)
-    solar_capacity_kw = params.get("solar_capacity_kw", 10)
-    wind_capacity_kw = params.get("wind_capacity_kw", 3)
-    battery_capacity_kwh = params.get("battery_capacity_kwh", 30)
-    solar_capex = params.get("solar_pv_capex", 15000)
-    wind_capex = params.get("wind_turbine_capex", 12000)
-    battery_capex = params.get("battery_capex", 36000)
 
     # Optional detailed CAPEX components
     detailed_capex = params.get("detailed_capex", None)
@@ -443,6 +105,18 @@ def calculate_os4p(params):
     tco = total_capex + lifetime_opex
     tco_per_outpost = tco / num_outposts
 
+    # LCOE Calculation (€/kWh)
+    # Annualize CAPEX using the Capital Recovery Factor (CRF)
+    r = interest_rate / 100  # convert to decimal
+    n = loan_years
+    if (1+r)**n - 1 != 0:
+        CRF = (r * (1+r)**n) / ((1+r)**n - 1)
+    else:
+        CRF = 0
+    annualized_capex = total_capex_per_outpost * CRF
+    annual_energy = params["annual_energy_production"]  # in kWh/year per outpost
+    lcoe = (annualized_capex + annual_opex_per_outpost) / annual_energy
+
     # Prepare standard CAPEX breakdown
     capex_breakdown = {
         "Microgrid": microgrid_capex * num_outposts,
@@ -491,6 +165,9 @@ def calculate_os4p(params):
         "debt": debt,
         "lifetime_debt_payment": lifetime_debt_payment,
         
+        # LCOE Metric
+        "lcoe": lcoe,
+        
         # Breakdowns for visualizations
         "capex_breakdown": capex_breakdown,
         "opex_breakdown": {
@@ -507,52 +184,6 @@ def calculate_os4p(params):
     # Add detailed CAPEX breakdown if available
     if detailed_capex_breakdown:
         result["detailed_capex_breakdown"] = detailed_capex_breakdown
-    
-    # Calculate LCOE metrics
-    # Extract energy system components from CAPEX if available
-    energy_capex = 0
-    if "detailed_capex" in params:
-        solar_capex = params["detailed_capex"].get(f"Solar PV ({solar_capacity_kw}kWp)", 0)
-        wind_capex = params["detailed_capex"].get(f"Wind Turbine ({wind_capacity_kw}kW)", 0) 
-        battery_capex = params["detailed_capex"].get(f"Battery Storage ({battery_capacity_kwh}kWh)", 0)
-        energy_capex = solar_capex + wind_capex + battery_capex
-    else:
-        # If no detailed breakdown, estimate energy portion of microgrid
-        energy_capex = microgrid_capex * 0.7  # Assume 70% of microgrid cost is energy-related
-    
-    # Energy production estimates
-    # Capacity factors (typical values)
-    solar_capacity_factor = 0.15  # 15% capacity factor for solar
-    wind_capacity_factor = 0.30   # 30% capacity factor for wind
-    
-    # Calculate annual energy production in kWh
-    annual_solar_production = solar_capacity_kw * 8760 * solar_capacity_factor
-    annual_wind_production = wind_capacity_kw * 8760 * wind_capacity_factor
-    total_annual_energy = annual_solar_production + annual_wind_production
-    
-    # Energy-related OPEX (estimated as percentage of total maintenance)
-    energy_opex = maintenance_opex * 0.4  # Assume 40% of maintenance is for energy system
-    
-    # Calculate LCOE
-    lcoe = calculate_lcoe(
-        energy_capex=energy_capex,
-        annual_opex=energy_opex,
-        annual_energy_production=total_annual_energy,
-        discount_rate=interest_rate,
-        lifetime=loan_years
-    )
-    
-    # Add LCOE metrics to result
-    result["lcoe"] = lcoe
-    result["energy_capex"] = energy_capex
-    result["energy_opex"] = energy_opex
-    result["annual_energy_production"] = total_annual_energy
-    result["solar_annual_production"] = annual_solar_production
-    result["wind_annual_production"] = annual_wind_production
-    result["energy_breakdown"] = {
-        "Solar PV": annual_solar_production,
-        "Wind Turbine": annual_wind_production
-    }
     
     return result
 
@@ -617,81 +248,6 @@ def create_co2_comparison_chart(co2_data):
     
     return fig
 
-def create_energy_production_chart(energy_data):
-    """
-    Create a pie chart showing energy production breakdown
-    """
-    labels = list(energy_data.keys())
-    values = list(energy_data.values())
-    
-    fig = go.Figure(data=[go.Pie(
-        labels=labels,
-        values=values,
-        hole=.4,
-        marker_colors=['#FFD700', '#87CEFA']
-    )])
-    
-    fig.update_layout(
-        title_text='Annual Energy Production Breakdown (kWh/year)'
-    )
-    
-    return fig
-
-def create_lcoe_comparison_chart(lcoe_value):
-    """
-    Create a gauge chart for LCOE with comparison markers
-    """
-    fig = go.Figure(go.Indicator(
-        mode = "gauge+number",
-        value = lcoe_value,
-        number = {"suffix": " €/kWh", "valueformat": ".3f"},
-        domain = {'x': [0, 1], 'y': [0, 1]},
-        title = {'text': "Levelized Cost of Energy (LCOE)"},
-        gauge = {
-            'axis': {'range': [None, 1], 'tickwidth': 1},
-            'bar': {'color': "#1E88E5"},
-            'steps': [
-                {'range': [0, 0.10], 'color': '#4CAF50'},  # Green (excellent)
-                {'range': [0.10, 0.20], 'color': '#8BC34A'},  # Light green (very good)
-                {'range': [0.20, 0.30], 'color': '#FFEB3B'},  # Yellow (good)
-                {'range': [0.30, 0.50], 'color': '#FFC107'},  # Amber (fair)
-                {'range': [0.50, 1], 'color': '#F44336'}     # Red (poor)
-            ],
-            'threshold': {
-                'line': {'color': "black", 'width': 2},
-                'thickness': 0.75,
-                'value': lcoe_value
-            }
-        }
-    ))
-    
-    # Add reference markers for typical energy costs
-    reference_values = [
-        {'value': 0.05, 'label': 'Utility Solar'},
-        {'value': 0.07, 'label': 'Utility Wind'},
-        {'value': 0.15, 'label': 'Residential Solar'},
-        {'value': 0.25, 'label': 'Diesel Generator'}
-    ]
-    
-    for ref in reference_values:
-        fig.add_shape(
-            type="line",
-            x0=0.5, y0=ref['value']/1,
-            x1=0.6, y1=ref['value']/1,
-            line=dict(color="black", width=3),
-            xref="paper", yref="y"
-        )
-        fig.add_annotation(
-            x=0.7, y=ref['value']/1,
-            text=ref['label'],
-            showarrow=False,
-            xref="paper", yref="y"
-        )
-    
-    fig.update_layout(height=400)
-    
-    return fig
-
 def perform_sensitivity_analysis(base_params, sensitivity_param, range_values):
     """
     Perform sensitivity analysis by varying one parameter and keeping others constant
@@ -705,7 +261,7 @@ def perform_sensitivity_analysis(base_params, sensitivity_param, range_values):
         params[sensitivity_param] = value
         # Calculate results with the new parameter value
         result = calculate_os4p(params)
-        # Store the parameter value and corresponding results
+        # Store the parameter value and corresponding CO2 savings
         results.append({
             'Parameter_Value': value,
             'CO2_Savings_Per_Outpost': result['co2_savings_per_outpost'],
@@ -713,59 +269,8 @@ def perform_sensitivity_analysis(base_params, sensitivity_param, range_values):
             'Manned_CO2_Emissions': result['manned_co2_emissions'] / 1000,  # Convert to tonnes
             'Autonomous_CO2_Emissions': result['autonomous_co2_emissions'] / 1000,  # Convert to tonnes
             'Cost_Efficiency': result['cost_efficiency_per_ton'],
-            'Innovation_Fund_Score': result['innovation_fund_score'],
-            'LCOE': result['lcoe']
+            'Innovation_Fund_Score': result['innovation_fund_score']
         })
-    
-    return pd.DataFrame(results)
-
-def perform_lcoe_sensitivity_analysis(base_params, variable_params):
-    """
-    Perform sensitivity analysis for LCOE by varying multiple parameters
-    
-    Parameters:
-    base_params (dict): Base parameters
-    variable_params (dict): Parameters to vary with their ranges {param: [min, max, steps]}
-    
-    Returns:
-    pd.DataFrame: Results of sensitivity analysis
-    """
-    results = []
-    
-    # Function to generate parameter combinations
-    def generate_combinations(param_index=0, current_params=None):
-        if current_params is None:
-            current_params = base_params.copy()
-        
-        if param_index >= len(variable_params):
-            # We've set all parameters, calculate LCOE
-            result = calculate_os4p(current_params)
-            
-            # Store results
-            result_row = {param: current_params[param] for param in variable_params.keys()}
-            result_row['LCOE'] = result['lcoe']
-            result_row['Annual_Energy'] = result['annual_energy_production']
-            result_row['Energy_CAPEX'] = result['energy_capex']
-            
-            results.append(result_row)
-            return
-        
-        # Get current parameter and its range
-        param = list(variable_params.keys())[param_index]
-        param_range = variable_params[param]
-        
-        # Generate values in the range
-        min_val, max_val, steps = param_range
-        values = np.linspace(min_val, max_val, steps)
-        
-        # For each value, recursively set the remaining parameters
-        for value in values:
-            temp_params = current_params.copy()
-            temp_params[param] = value
-            generate_combinations(param_index + 1, temp_params)
-    
-    # Generate all combinations and calculate LCOE
-    generate_combinations()
     
     return pd.DataFrame(results)
 
@@ -917,6 +422,15 @@ def main():
         co2_factor = st.number_input("CO₂ Factor (kg CO₂ per liter)", min_value=0.5, max_value=3.0, value=1.0, step=0.1, format="%.1f")
         maintenance_emissions = st.number_input("Maintenance Emissions (kg CO₂)", min_value=500, max_value=5000, value=1594, step=10, format="%d")
 
+        st.subheader("OPEX Inputs (€ per Outpost per Year)")
+        maintenance_opex = st.number_input("Maintenance OPEX", min_value=1000, max_value=50000, value=15000, step=1000, format="%d")
+        communications_opex = st.number_input("Communications OPEX", min_value=1000, max_value=20000, value=6000, step=1000, format="%d")
+        security_opex = st.number_input("Security OPEX", min_value=1000, max_value=30000, value=9000, step=1000, format="%d")
+        
+        st.subheader("Energy Production")
+        annual_energy_production = st.number_input("Annual Energy Production per Outpost (kWh/year)", 
+                                                     min_value=1000, max_value=100000, value=15000, step=1000, format="%d")
+        
         # Main CAPEX inputs
         st.subheader("CAPEX Summary (€ per Outpost)")
         
@@ -925,15 +439,9 @@ def main():
         
         if show_capex_detail:
             st.markdown("#### Microgrid CAPEX Breakdown")
-            solar_capacity_kw = st.number_input("Solar PV System Capacity (kW)", min_value=5, max_value=50, value=10, step=1, format="%d")
-            solar_pv_capex = st.number_input(f"Solar PV System ({solar_capacity_kw}kWp)", min_value=5000, max_value=50000, value=15000, step=1000, format="%d")
-            
-            wind_capacity_kw = st.number_input("Wind Turbine Capacity (kW)", min_value=1, max_value=10, value=3, step=1, format="%d")
-            wind_turbine_capex = st.number_input(f"Wind Turbine ({wind_capacity_kw}kW)", min_value=5000, max_value=50000, value=12000, step=1000, format="%d")
-            
-            battery_capacity_kwh = st.number_input("Battery Storage Capacity (kWh)", min_value=10, max_value=100, value=30, step=5, format="%d")
-            battery_capex = st.number_input(f"Battery Storage ({battery_capacity_kwh}kWh)", min_value=10000, max_value=100000, value=36000, step=1000, format="%d")
-            
+            solar_pv_capex = st.number_input("Solar PV System (10kWp)", min_value=5000, max_value=50000, value=15000, step=1000, format="%d")
+            wind_turbine_capex = st.number_input("Wind Turbine (3kW)", min_value=5000, max_value=50000, value=12000, step=1000, format="%d")
+            battery_capex = st.number_input("Battery Storage (30kWh)", min_value=10000, max_value=100000, value=36000, step=1000, format="%d")
             telecom_capex = st.number_input("Telecommunications", min_value=5000, max_value=50000, value=15000, step=1000, format="%d")
             bos_micro_capex = st.number_input("Microgrid BOS", min_value=5000, max_value=50000, value=20000, step=1000, format="%d")
             install_capex = st.number_input("Installation & Commissioning", min_value=5000, max_value=50000, value=12000, step=1000, format="%d")
@@ -961,8 +469,492 @@ def main():
             microgrid_capex = st.number_input("Microgrid CAPEX", min_value=50000, max_value=200000, value=110000, step=5000, format="%d")
             drones_capex = st.number_input("Drones CAPEX", min_value=20000, max_value=100000, value=60000, step=5000, format="%d")
             bos_capex = st.number_input("BOS (Balance of System) CAPEX", min_value=10000, max_value=100000, value=40000, step=5000, format="%d")
+    
+    # Store user inputs in a params dictionary
+    params = {
+        "num_outposts": num_outposts,
+        "large_patrol_fuel": large_patrol_fuel,
+        "rib_fuel": rib_fuel,
+        "small_patrol_fuel": small_patrol_fuel,
+        "hours_per_day_base": hours_per_day_base,
+        "interest_rate": interest_rate,
+        "loan_years": loan_years,
+        "sla_premium": sla_premium,
+        "operating_days_per_year": operating_days_per_year,
+        "co2_factor": co2_factor,
+        "maintenance_emissions": maintenance_emissions,
+        "maintenance_opex": maintenance_opex,
+        "communications_opex": communications_opex,
+        "security_opex": security_opex,
+        "annual_energy_production": annual_energy_production
+    }
+    
+    # Add CAPEX parameters based on whether detailed breakdown is used
+    if show_capex_detail:
+        params["microgrid_capex"] = microgrid_capex
+        params["drones_capex"] = drones_capex
+        params["bos_capex"] = bos_capex
         
-        st.subheader("OPEX Inputs (€ per Outpost per Year)")
-        maintenance_opex = st.number_input("Maintenance OPEX", min_value=1000, max_value=50000, value=15000, step=1000, format="%d")
-        communications_opex = st.number_input("Communications OPEX", min_value=1000, max_value=20000, value=6000, step=1000, format="%d")
-        security_opex = st.number_input("Security OPEX", min_value=1000, max_value=30000, value=9000, step=1000, format="%d")
+        # Add detailed CAPEX breakdown
+        params["detailed_capex"] = {
+            "Solar PV (10kWp)": solar_pv_capex,
+            "Wind Turbine (3kW)": wind_turbine_capex,
+            "Battery Storage (30kWh)": battery_capex,
+            "Telecommunications": telecom_capex,
+            "Microgrid BOS": bos_micro_capex,
+            "Installation & Commissioning": install_capex,
+            f"Drones ({drone_units}x)": drones_capex,
+            "Additional BOS": bos_capex
+        }
+    else:
+        params["microgrid_capex"] = microgrid_capex
+        params["drones_capex"] = drones_capex
+        params["bos_capex"] = bos_capex
+    
+    # Calculate results
+    results = calculate_os4p(params)
+
+    # Display comprehensive results in the main area
+    st.header("Base Case Results")
+    
+    # Create tabs for organized display
+    tab1, tab2, tab3, tab4 = st.tabs(["Overview", "Financial Details", "Visualizations", "Sensitivity Analysis"])
+    
+    with tab1:
+        # CO2 metrics
+        st.subheader("Environmental Impact")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("CO₂ Savings per Outpost (tonnes/year)", f"{results['co2_savings_per_outpost']:.1f}")
+        with col2:
+            st.metric("Total CO₂ Savings per Year (tonnes)", f"{results['co2_savings_all_outposts']:.1f}")
+        with col3:
+            st.metric("Lifetime CO₂ Savings (tonnes)", f"{results['co2_savings_lifetime']:.1f}")
+        
+        # Cost metrics
+        st.subheader("Cost Overview")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Total CAPEX (€)", f"{results['total_capex']:,.0f}")
+            st.metric("CAPEX per Outpost (€)", f"{results['total_capex_per_outpost']:,.0f}")
+        with col2:
+            st.metric("Annual OPEX (€/year)", f"{results['annual_opex']:,.0f}")
+            st.metric("OPEX per Outpost (€/year)", f"{results['annual_opex_per_outpost']:,.0f}")
+        with col3:
+            st.metric("Total Cost of Ownership (€)", f"{results['tco']:,.0f}")
+            st.metric("TCO per Outpost (€)", f"{results['tco_per_outpost']:,.0f}")
+        
+        # LCOE metric display
+        st.subheader("LCOE Calculation")
+        st.metric("LCOE (€/kWh)", f"{results['lcoe']:.4f}")
+        
+        # Efficiency and Innovation Fund metrics
+        st.subheader("Efficiency Metrics & Innovation Fund Score")
+        
+        # Show Innovation Fund scoring explanation
+        with st.expander("Innovation Fund Scoring Criteria"):
+            st.markdown("""
+            **Innovation Fund Scoring for Cost Efficiency (INNOVFUND-2024-NZT-PILOTS)**
+            
+            The Innovation Fund uses the following formula to score projects based on cost efficiency:
+            
+            - If cost efficiency ratio ≤ 2000 EUR/t CO₂-eq:  
+              Score = 12 - (12 × (cost efficiency ratio / 2000))
+            
+            - If cost efficiency ratio > 2000 EUR/t CO₂-eq:  
+              Score = 0
+            
+            The result is rounded to the nearest half point. The minimum score is 0, maximum is 12.
+            
+            *A lower cost efficiency ratio (less EUR per tonne of CO₂ saved) results in a higher score.*
+            """)
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            ce_yearly = results['cost_efficiency_per_ton']
+            ce_yearly_str = f"{ce_yearly:,.0f}" if ce_yearly != float('inf') else "∞"
+            st.metric("Cost per Tonne CO₂ Saved (€/tonne/year)", ce_yearly_str)
+            
+            # Calculate Innovation Fund score color
+            if results['innovation_fund_score'] >= 9:
+                score_color = "green"
+            elif results['innovation_fund_score'] >= 6:
+                score_color = "orange"
+            else:
+                score_color = "red"
+            
+            st.markdown(f"<h3 style='color: {score_color}'>Innovation Fund Score: {results['innovation_fund_score']}/12</h3>", unsafe_allow_html=True)
+            
+            # Create progress bar for Innovation Fund score
+            score_percentage = (results['innovation_fund_score'] / 12) * 100
+            st.progress(score_percentage / 100)
+        
+        with col2:
+            ce_lifetime = results['cost_efficiency_lifetime']
+            ce_lifetime_str = f"{ce_lifetime:,.0f}" if ce_lifetime != float('inf') else "∞"
+            st.metric("Lifetime Cost per Tonne CO₂ Saved (€/tonne)", ce_lifetime_str)
+            
+            # Calculate lifetime Innovation Fund score color
+            if results['innovation_fund_score_lifetime'] >= 9:
+                score_lifetime_color = "green"
+            elif results['innovation_fund_score_lifetime'] >= 6:
+                score_lifetime_color = "orange"
+            else:
+                score_lifetime_color = "red"
+            
+            st.markdown(f"<h3 style='color: {score_lifetime_color}'>Lifetime Score: {results['innovation_fund_score_lifetime']}/12</h3>", unsafe_allow_html=True)
+            
+            # Create progress bar for lifetime Innovation Fund score
+            score_lifetime_percentage = (results['innovation_fund_score_lifetime'] / 12) * 100
+            st.progress(score_lifetime_percentage / 100)
+    
+    with tab2:
+        # Financial details
+        st.subheader("Financing Details")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Total Pilot Cost with Markup (€)", f"{results['pilot_markup']:,.0f}")
+            st.metric("Grant Coverage (€)", f"{results['total_grant']:,.0f}")
+            st.metric("Debt Financing Required (€)", f"{results['debt']:,.0f}")
+        with col2:
+            st.metric("Monthly Debt Payment (€)", f"{results['monthly_debt_payment']:,.0f}")
+            st.metric("Lifetime Debt Payment (€)", f"{results['lifetime_debt_payment']:,.0f}")
+        with col3:
+            st.metric("Monthly Fee per Outpost (€)", f"{results['monthly_fee_unit']:,.0f}")
+            st.metric("Annual Fee per Outpost (€)", f"{results['annual_fee_unit']:,.0f}")
+            st.metric("Lifetime Total Fee (€)", f"{results['lifetime_fee_total']:,.0f}")
+        
+        # CAPEX Breakdown
+        st.subheader("CAPEX Breakdown")
+        
+        # Check if detailed CAPEX breakdown is available
+        if "detailed_capex_breakdown" in results:
+            detailed_capex_df = pd.DataFrame.from_dict(results["detailed_capex_breakdown"], orient='index', columns=["Amount (€)"])
+            detailed_capex_df["Percentage"] = (detailed_capex_df["Amount (€)"] / detailed_capex_df["Amount (€)"].sum() * 100).round(1).astype(str) + '%'
+            st.dataframe(detailed_capex_df)
+            st.markdown("**Detailed CAPEX Breakdown**")
+        else:
+            capex_df = pd.DataFrame.from_dict(results["capex_breakdown"], orient='index', columns=["Amount (€)"])
+            capex_df["Percentage"] = (capex_df["Amount (€)"] / capex_df["Amount (€)"].sum() * 100).round(1).astype(str) + '%'
+            st.dataframe(capex_df)
+        
+        # OPEX Breakdown
+        st.subheader("Annual OPEX Breakdown")
+        opex_df = pd.DataFrame.from_dict(results["opex_breakdown"], orient='index', columns=["Amount (€)"])
+        opex_df["Percentage"] = (opex_df["Amount (€)"] / opex_df["Amount (€)"].sum() * 100).round(1).astype(str) + '%'
+        st.dataframe(opex_df)
+    
+    with tab3:
+        # Cost breakdown visualization
+        st.subheader("Cost Breakdown Visualization")
+        if "detailed_capex_breakdown" in results:
+            cost_chart = create_cost_breakdown_chart(results["capex_breakdown"], results["opex_breakdown"], 
+                                                    detailed_capex=results["detailed_capex_breakdown"])
+        else:
+            cost_chart = create_cost_breakdown_chart(results["capex_breakdown"], results["opex_breakdown"])
+        
+        st.plotly_chart(cost_chart)
+        
+        # CO2 comparison visualization
+        st.subheader("CO₂ Emissions Comparison")
+        co2_chart = create_co2_comparison_chart(results["co2_factors"])
+        st.plotly_chart(co2_chart)
+    
+    with tab4:
+        st.subheader("CO₂ Emissions Sensitivity Analysis")
+        
+        # Parameter selection
+        st.markdown("Select a parameter to analyze its impact on CO₂ emissions:")
+        
+        sensitivity_param_options = {
+            "large_patrol_fuel": "Large Patrol Boat Fuel (L/h)",
+            "rib_fuel": "RIB Boat Fuel (L/h)",
+            "small_patrol_fuel": "Small Patrol Boat Fuel (L/h)",
+            "hours_per_day_base": "Patrol Hours per Day",
+            "operating_days_per_year": "Operating Days per Year",
+            "co2_factor": "CO₂ Factor (kg CO₂/L)",
+            "maintenance_emissions": "Maintenance Emissions (kg CO₂)"
+        }
+        
+        col1, col2 = st.columns([2, 3])
+        with col1:
+            selected_param = st.selectbox(
+                "Parameter to analyze:", 
+                list(sensitivity_param_options.keys()),
+                format_func=lambda x: sensitivity_param_options[x]
+            )
+            
+            # Define range based on selected parameter
+            if selected_param == "large_patrol_fuel":
+                min_val, max_val, default_val, step = 50, 300, params[selected_param], 25
+            elif selected_param == "rib_fuel":
+                min_val, max_val, default_val, step = 10, 100, params[selected_param], 10
+            elif selected_param == "small_patrol_fuel":
+                min_val, max_val, default_val, step = 5, 50, params[selected_param], 5
+            elif selected_param == "hours_per_day_base":
+                min_val, max_val, default_val, step = 4, 24, params[selected_param], 2
+            elif selected_param == "operating_days_per_year":
+                min_val, max_val, default_val, step = 200, 365, params[selected_param], 20
+            elif selected_param == "co2_factor":
+                min_val, max_val, default_val, step = 0.5, 3.0, params[selected_param], 0.25
+            elif selected_param == "maintenance_emissions":
+                min_val, max_val, default_val, step = 500, 5000, params[selected_param], 500
+            
+            min_range = st.number_input("Minimum value:", value=min_val, step=step)
+            max_range = st.number_input("Maximum value:", value=max_val, step=step)
+            num_steps = st.number_input("Number of data points:", value=10, min_value=5, max_value=20, step=1)
+        
+        with col2:
+            if min_range >= max_range:
+                st.error("Minimum value must be less than maximum value!")
+            else:
+                # Generate range values
+                if selected_param == "co2_factor":
+                    range_values = np.linspace(min_range, max_range, int(num_steps))
+                else:
+                    range_values = np.linspace(min_range, max_range, int(num_steps))
+                    if selected_param in ["hours_per_day_base", "operating_days_per_year"]:
+                        range_values = range_values.astype(int)
+                
+                # Perform sensitivity analysis
+                sensitivity_results = perform_sensitivity_analysis(params, selected_param, range_values)
+                
+                # Display data table
+                st.markdown("#### Sensitivity Analysis Results:")
+                st.dataframe(sensitivity_results.style.format({
+                    'Parameter_Value': '{:.2f}' if selected_param == "co2_factor" else '{:.0f}',
+                    'CO2_Savings_Per_Outpost': '{:.2f}', 
+                    'CO2_Savings_All_Outposts': '{:.2f}',
+                    'Manned_CO2_Emissions': '{:.2f}',
+                    'Autonomous_CO2_Emissions': '{:.2f}'
+                }))
+        
+        # Visualization of sensitivity analysis
+        st.markdown("#### Sensitivity Analysis Visualizations")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Total CO2 savings chart
+            co2_savings_chart = create_sensitivity_chart(
+                sensitivity_results, 
+                sensitivity_param_options[selected_param],
+                'CO2_Savings_All_Outposts', 
+                'Total CO₂ Savings (tonnes/year)'
+            )
+            st.plotly_chart(co2_savings_chart, use_container_width=True)
+        
+        with col2:
+            # Emissions comparison chart
+            emissions_chart = create_emissions_sensitivity_chart(
+                sensitivity_results,
+                sensitivity_param_options[selected_param]
+            )
+            st.plotly_chart(emissions_chart, use_container_width=True)
+        
+        # Innovation Fund Score sensitivity chart
+        st.markdown("#### Innovation Fund Score Sensitivity")
+        
+        # Show Innovation Fund score chart
+        innovation_score_chart = create_innovation_fund_score_chart(
+            sensitivity_results,
+            sensitivity_param_options[selected_param]
+        )
+        st.plotly_chart(innovation_score_chart, use_container_width=True)
+        
+        # Add explanation
+        st.markdown("""
+        This chart shows how the Innovation Fund score changes with the parameter value. 
+        Higher scores (closer to 12) improve chances of funding. Scores are calculated based on the 
+        cost efficiency ratio (EUR/tonne CO₂ saved) using the formula:
+        
+        **Score = 12 - (12 × cost efficiency ratio / 2000)** when ratio ≤ 2000 EUR/t, **0** otherwise.
+        """)
+        
+        # Tornado chart for relative importance of different parameters
+        st.subheader("Multi-Parameter Impact Analysis")
+        
+        # User can select which parameters to include in the tornado analysis
+        st.markdown("Analyze the impact of multiple parameters simultaneously:")
+        
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            analyze_patrol_fuel = st.checkbox("Patrol Boat Fuel Consumption", value=True)
+        with col2:
+            analyze_operations = st.checkbox("Operational Parameters", value=True) 
+        with col3:
+            analyze_emissions = st.checkbox("Emissions Parameters", value=True)
+        
+        variation_pct = st.slider("Parameter Variation (%)", min_value=5, max_value=50, value=20, step=5,
+                              help="How much each parameter will be varied up and down from the base case")
+        
+        if st.button("Run Multi-Parameter Analysis"):
+            # Initialize data for tornado chart
+            tornado_data = []
+            
+            # Base case CO2 savings
+            base_result = calculate_os4p(params)
+            base_savings = base_result['co2_savings_all_outposts']
+            
+            if analyze_patrol_fuel:
+                # Large patrol boat fuel
+                params_high = params.copy()
+                params_high['large_patrol_fuel'] = params['large_patrol_fuel'] * (1 + variation_pct/100)
+                high_result = calculate_os4p(params_high)
+                
+                params_low = params.copy()
+                params_low['large_patrol_fuel'] = params['large_patrol_fuel'] * (1 - variation_pct/100)
+                low_result = calculate_os4p(params_low)
+                
+                tornado_data.append({
+                    'Parameter': 'Large Patrol Fuel',
+                    'Low_Value': low_result['co2_savings_all_outposts'] - base_savings,
+                    'High_Value': high_result['co2_savings_all_outposts'] - base_savings
+                })
+                
+                # RIB fuel
+                params_high = params.copy()
+                params_high['rib_fuel'] = params['rib_fuel'] * (1 + variation_pct/100)
+                high_result = calculate_os4p(params_high)
+                
+                params_low = params.copy()
+                params_low['rib_fuel'] = params['rib_fuel'] * (1 - variation_pct/100)
+                low_result = calculate_os4p(params_low)
+                
+                tornado_data.append({
+                    'Parameter': 'RIB Fuel',
+                    'Low_Value': low_result['co2_savings_all_outposts'] - base_savings,
+                    'High_Value': high_result['co2_savings_all_outposts'] - base_savings
+                })
+            
+            if analyze_operations:
+                # Operating days
+                params_high = params.copy()
+                params_high['operating_days_per_year'] = min(365, int(params['operating_days_per_year'] * (1 + variation_pct/100)))
+                high_result = calculate_os4p(params_high)
+                
+                params_low = params.copy()
+                params_low['operating_days_per_year'] = max(200, int(params['operating_days_per_year'] * (1 - variation_pct/100)))
+                low_result = calculate_os4p(params_low)
+                
+                tornado_data.append({
+                    'Parameter': 'Operating Days',
+                    'Low_Value': low_result['co2_savings_all_outposts'] - base_savings,
+                    'High_Value': high_result['co2_savings_all_outposts'] - base_savings
+                })
+                
+                # Hours per day
+                params_high = params.copy()
+                params_high['hours_per_day_base'] = min(24, int(params['hours_per_day_base'] * (1 + variation_pct/100)))
+                high_result = calculate_os4p(params_high)
+                
+                params_low = params.copy()
+                params_low['hours_per_day_base'] = max(4, int(params['hours_per_day_base'] * (1 - variation_pct/100)))
+                low_result = calculate_os4p(params_low)
+                
+                tornado_data.append({
+                    'Parameter': 'Hours per Day',
+                    'Low_Value': low_result['co2_savings_all_outposts'] - base_savings,
+                    'High_Value': high_result['co2_savings_all_outposts'] - base_savings
+                })
+            
+            if analyze_emissions:
+                # CO2 factor
+                params_high = params.copy()
+                params_high['co2_factor'] = params['co2_factor'] * (1 + variation_pct/100)
+                high_result = calculate_os4p(params_high)
+                
+                params_low = params.copy()
+                params_low['co2_factor'] = params['co2_factor'] * (1 - variation_pct/100)
+                low_result = calculate_os4p(params_low)
+                
+                tornado_data.append({
+                    'Parameter': 'CO₂ Factor',
+                    'Low_Value': low_result['co2_savings_all_outposts'] - base_savings,
+                    'High_Value': high_result['co2_savings_all_outposts'] - base_savings
+                })
+                
+                # Maintenance emissions
+                params_high = params.copy()
+                params_high['maintenance_emissions'] = params['maintenance_emissions'] * (1 + variation_pct/100)
+                high_result = calculate_os4p(params_high)
+                
+                params_low = params.copy()
+                params_low['maintenance_emissions'] = params['maintenance_emissions'] * (1 - variation_pct/100)
+                low_result = calculate_os4p(params_low)
+                
+                tornado_data.append({
+                    'Parameter': 'Maintenance Emissions',
+                    'Low_Value': low_result['co2_savings_all_outposts'] - base_savings,
+                    'High_Value': high_result['co2_savings_all_outposts'] - base_savings
+                })
+            
+            # Create tornado chart
+            if tornado_data:
+                # Convert to DataFrame and sort by impact magnitude
+                tornado_df = pd.DataFrame(tornado_data)
+                tornado_df['Total_Impact'] = tornado_df['High_Value'].abs() + tornado_df['Low_Value'].abs()
+                tornado_df = tornado_df.sort_values('Total_Impact', ascending=False)
+                
+                # Create tornado chart
+                fig = go.Figure()
+                
+                # Add bars for high values (positive impact)
+                fig.add_trace(go.Bar(
+                    y=tornado_df['Parameter'],
+                    x=tornado_df['High_Value'],
+                    name='Positive Impact',
+                    orientation='h',
+                    marker=dict(color='#66b3ff')
+                ))
+                
+                # Add bars for low values (negative impact)
+                fig.add_trace(go.Bar(
+                    y=tornado_df['Parameter'],
+                    x=tornado_df['Low_Value'],
+                    name='Negative Impact',
+                    orientation='h',
+                    marker=dict(color='#ff9999')
+                ))
+                
+                # Update layout
+                fig.update_layout(
+                    title='Tornado Chart: Impact on CO₂ Savings (±{0}% parameter variation)'.format(variation_pct),
+                    xaxis_title='Change in CO₂ Savings (tonnes/year)',
+                    barmode='overlay',
+                    legend=dict(
+                        orientation="h",
+                        y=1.1,
+                        x=0.5,
+                        xanchor='center'
+                    ),
+                    margin=dict(l=100)
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
+                
+                
+                # Display explanation
+                st.markdown("""
+                ### Interpretation:
+                - This chart shows how sensitive CO₂ savings are to changes in each parameter
+                - Longer bars indicate parameters with greater impact
+                - Blue bars show impact when parameter increases by {0}%
+                - Red bars show impact when parameter decreases by {0}%
+                """.format(variation_pct))
+                
+                # Calculate parameter elasticity
+                st.subheader("Parameter Elasticity")
+                st.markdown("""
+                This measures how responsive CO₂ savings are to a 1% change in each parameter.
+                Higher absolute values indicate more influential parameters.
+                """)
+                
+                tornado_df['Elasticity'] = (tornado_df['High_Value'] / base_savings) / (variation_pct/100)
+                elasticity_df = tornado_df[['Parameter', 'Elasticity']].sort_values('Elasticity', ascending=False, key=abs)
+                
+                st.dataframe(elasticity_df.style.format({'Elasticity': '{:.3f}'}))
+            else:
+                st.warning("Please select at least one parameter group to analyze.")
+
+if __name__ == "__main__":
+    main()
