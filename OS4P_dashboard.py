@@ -588,4 +588,98 @@ def main():
             
             if analyze_emissions:
                 # CO2 factor
-                params_high = params.
+                params_high = params.copy()
+                params_high['co2_factor'] = params['co2_factor'] * (1 + variation_pct/100)
+                high_result = calculate_os4p(params_high)
+                
+                params_low = params.copy()
+                params_low['co2_factor'] = params['co2_factor'] * (1 - variation_pct/100)
+                low_result = calculate_os4p(params_low)
+                
+                tornado_data.append({
+                    'Parameter': 'CO₂ Factor',
+                    'Low_Value': low_result['co2_savings_all_outposts'] - base_savings,
+                    'High_Value': high_result['co2_savings_all_outposts'] - base_savings
+                })
+                
+                # Maintenance emissions
+                params_high = params.copy()
+                params_high['maintenance_emissions'] = params['maintenance_emissions'] * (1 + variation_pct/100)
+                high_result = calculate_os4p(params_high)
+                
+                params_low = params.copy()
+                params_low['maintenance_emissions'] = params['maintenance_emissions'] * (1 - variation_pct/100)
+                low_result = calculate_os4p(params_low)
+                
+                tornado_data.append({
+                    'Parameter': 'Maintenance Emissions',
+                    'Low_Value': low_result['co2_savings_all_outposts'] - base_savings,
+                    'High_Value': high_result['co2_savings_all_outposts'] - base_savings
+                })
+            
+            # Create tornado chart
+            if tornado_data:
+                # Convert to DataFrame and sort by impact magnitude
+                tornado_df = pd.DataFrame(tornado_data)
+                tornado_df['Total_Impact'] = tornado_df['High_Value'].abs() + tornado_df['Low_Value'].abs()
+                tornado_df = tornado_df.sort_values('Total_Impact', ascending=False)
+                
+                # Create tornado chart
+                fig = go.Figure()
+                
+                # Add bars for high values (positive impact)
+                fig.add_trace(go.Bar(
+                    y=tornado_df['Parameter'],
+                    x=tornado_df['High_Value'],
+                    name='Positive Impact',
+                    orientation='h',
+                    marker=dict(color='#66b3ff')
+                ))
+                
+                # Add bars for low values (negative impact)
+                fig.add_trace(go.Bar(
+                    y=tornado_df['Parameter'],
+                    x=tornado_df['Low_Value'],
+                    name='Negative Impact',
+                    orientation='h',
+                    marker=dict(color='#ff9999')
+                ))
+                
+                # Update layout
+                fig.update_layout(
+                    title='Tornado Chart: Impact on CO₂ Savings (±{0}% parameter variation)'.format(variation_pct),
+                    xaxis_title='Change in CO₂ Savings (tonnes/year)',
+                    barmode='overlay',
+                    legend=dict(
+                        orientation="h",
+                        y=1.1,
+                        x=0.5,
+                        xanchor='center'
+                    ),
+                    margin=dict(l=100)
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
+                
+                # Display explanation
+                st.markdown("""
+                ### Interpretation:
+                - This chart shows how sensitive CO₂ savings are to changes in each parameter
+                - Longer bars indicate parameters with greater impact
+                - Blue bars show impact when parameter increases by {0}%
+                - Red bars show impact when parameter decreases by {0}%
+                """.format(variation_pct))
+                
+                # Calculate parameter elasticity
+                st.subheader("Parameter Elasticity")
+                st.markdown("""
+                This measures how responsive CO₂ savings are to a 1% change in each parameter.
+                Higher absolute values indicate more influential parameters.
+                """)
+                
+                tornado_df['Elasticity'] = (tornado_df['High_Value'] / base_savings) / (variation_pct/100)
+                elasticity_df = tornado_df[['Parameter', 'Elasticity']].sort_values('Elasticity', ascending=False, key=abs)
+                
+                st.dataframe(elasticity_df.style.format({'Elasticity': '{:.3f}'}))
+            else:
+                st.warning("Please select at least one parameter group to analyze.")
