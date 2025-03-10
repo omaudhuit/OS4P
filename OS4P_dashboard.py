@@ -108,10 +108,15 @@ def main():
         loan_years = st.number_input("Project Lifetime (years)", min_value=3, max_value=25, value=10, step=1, format="%d")
         sla_premium = st.number_input("SLA Premium (%)", min_value=0.0, max_value=50.0, value=15.0, step=1.0, format="%.1f")
 
-        st.header("OPEX & CAPEX Parameters")
-        operating_days_per_year = st.number_input("Operating Days per Year", min_value=200, max_value=365, value=300, step=1, format="%d")
-        co2_factor = st.number_input("CO₂ Factor (kg CO₂ per liter)", min_value=0.5, max_value=3.0, value=1.0, step=0.1, format="%.1f")
-        maintenance_emissions = st.number_input("Maintenance Emissions (kg CO₂)", min_value=500, max_value=5000, value=1594, step=10, format="%d")
+        st.header("CAPEX Inputs (€ per Outpost)")
+        capex_microgrid = st.number_input("Microgrid CAPEX", min_value=50000, max_value=200000, value=110000, step=5000, format="%d")
+        capex_drones = st.number_input("Drones CAPEX", min_value=20000, max_value=100000, value=60000, step=5000, format="%d")
+        capex_bos = st.number_input("Balance of System CAPEX", min_value=10000, max_value=50000, value=30000, step=5000, format="%d")
+
+        st.header("OPEX Inputs (€ per Outpost)")
+        opex_maintenance = st.number_input("Maintenance OPEX", min_value=5000, max_value=50000, value=10000, step=5000, format="%d")
+        opex_communications = st.number_input("Communications OPEX", min_value=5000, max_value=50000, value=15000, step=5000, format="%d")
+        opex_security = st.number_input("Security OPEX", min_value=5000, max_value=50000, value=20000, step=5000, format="%d")
 
     # ✅ Store user inputs explicitly in a dictionary
     params = {
@@ -125,16 +130,16 @@ def main():
         "sla_premium": sla_premium,
         "operating_days_per_year": operating_days_per_year,
         "co2_factor": co2_factor,
-        "maintenance_emissions": maintenance_emissions
+        "maintenance_emissions": maintenance_emissions,
+        "capex_microgrid": capex_microgrid,
+        "capex_drones": capex_drones,
+        "capex_bos": capex_bos,
+        "opex_maintenance": opex_maintenance,
+        "opex_communications": opex_communications,
+        "opex_security": opex_security
     }
 
-    # Calculate results
     base_results = calculate_os4p(params)
-
-    # Display results
-    st.header("Base Case Results")
-    st.metric("Total CAPEX (€)", f"€{base_results['total_capex']:,.0f}")
-    st.metric("Total OPEX (€)", f"€{base_results['total_opex']:,.0f}")
 
 if __name__ == "__main__":
     main()
