@@ -103,8 +103,15 @@ def main():
         co2_factor = st.number_input("CO₂ Factor (kg CO₂ per liter)", min_value=0.5, max_value=3.0, value=1.0, step=0.1, format="%.1f")
         maintenance_emissions = st.number_input("Maintenance Emissions (kg CO₂)", min_value=500, max_value=5000, value=1594, step=10, format="%d")
 
+        st.header("CAPEX Inputs (€ per Outpost)")
+        microgrid_capex = st.number_input("Microgrid CAPEX", min_value=50000, max_value=200000, value=110000, step=5000, format="%d")
+        drones_capex = st.number_input("Drones CAPEX", min_value=20000, max_value=100000, value=60000, step=5000, format="%d")
+        communication_capex = st.number_input("Communication CAPEX", min_value=10000, max_value=50000, value=30000, step=5000, format="%d")
+        security_capex = st.number_input("Security CAPEX", min_value=10000, max_value=50000, value=25000, step=5000, format="%d")
+        installation_capex = st.number_input("Installation CAPEX", min_value=5000, max_value=30000, value=15000, step=5000, format="%d")
+
     # Store user inputs in dictionary
-    params = locals()
+    params = {key: value for key, value in locals().items() if key in calculate_os4p.__code__.co_varnames}
     
     # Calculate results
     base_results = calculate_os4p(params)
@@ -112,20 +119,9 @@ def main():
     # Display results
     st.header("Base Case Results")
 
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.metric("CO₂ Savings per Outpost (tonnes/year)", f"{base_results['co2_savings_per_outpost']:.1f}")
-        st.metric("Total CO₂ Savings per Year (tonnes)", f"{base_results['co2_savings_all_outposts']:.1f}")
-
-    with col2:
-        st.metric("Lifetime CO₂ Savings (tonnes)", f"{base_results['co2_savings_lifetime']:.1f}")
-        st.metric("Monthly Debt Payment (€)", f"€{base_results['monthly_debt_payment']:.2f}")
-
-    with col3:
-        st.metric("Monthly Fee per Outpost (€)", f"€{base_results['monthly_fee_unit']:.2f}")
-        st.metric("Cost Efficiency per Ton (€/tCO₂)", f"€{base_results['cost_efficiency_per_ton']:.0f}")
-
+    st.metric("CO₂ Savings per Outpost (tonnes/year)", f"{base_results['co2_savings_per_outpost']:.1f}")
+    st.metric("Total CO₂ Savings per Year (tonnes)", f"{base_results['co2_savings_all_outposts']:.1f}")
+    
     # CAPEX Breakdown
     st.header("Full CAPEX Breakdown")
     capex_df = pd.DataFrame.from_dict(base_results["capex_breakdown"], orient='index', columns=["Amount (€)"])
