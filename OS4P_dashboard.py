@@ -44,7 +44,7 @@ def calculate_os4p(num_outposts, fuel_consumption, interest_rate, loan_years, sl
         "co2_savings_all_outposts": co2_savings_all_outposts,
         "co2_savings_lifetime": co2_savings_lifetime,
         "monthly_debt_payment": monthly_debt_payment,
-        "monthly_fee_unit": monthly_fee_unit
+        "monthly_fee_unit": monthly_fee_unit,
         "cost_efficiency_per_ton": cost_efficiency_1,
         "cost_efficiency_lifetime": cost_efficiency_2
     }
