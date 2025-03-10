@@ -12,7 +12,6 @@ def calculate_os4p(params):
     rib_fuel = params["rib_fuel"]
     small_patrol_fuel = params["small_patrol_fuel"]
     hours_per_day_base = params["hours_per_day_base"]
-    fuel_consumption = params["fuel_consumption"]
     interest_rate = params["interest_rate"]
     loan_years = params["loan_years"]
     sla_premium = params["sla_premium"]
@@ -28,8 +27,11 @@ def calculate_os4p(params):
     security_capex = params["security_capex"]
     installation_capex = params["installation_capex"]
 
-    # CO₂ Savings Calculation (Considering Different Patrol Boat Types)
-    daily_fuel_consumption = (large_patrol_fuel + rib_fuel + small_patrol_fuel) * hours_per_day_base
+    # ✅ CO₂ Savings Calculation (Including GENSET)
+    genset_fuel_per_hour = 2.5  # Liters per hour (GENSET)
+    genset_fuel_per_day = genset_fuel_per_hour * 24  # 24-hour consumption
+
+    daily_fuel_consumption = ((large_patrol_fuel + rib_fuel + small_patrol_fuel) * hours_per_day_base) + genset_fuel_per_day
     annual_fuel_consumption = daily_fuel_consumption * operating_days_per_year
     manned_co2_emissions = annual_fuel_consumption * co2_factor
     autonomous_co2_emissions = maintenance_emissions
