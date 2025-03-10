@@ -297,7 +297,7 @@ def main():
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        num_outposts = st.slider("Number of Outposts", 1, 20, 5)
+        num_outposts = st.slider("Number of Outposts", 45, 200, 5)
         fuel_consumption = st.slider("Fuel Consumption (L/hr)", 5, 100, 25)
     
     with col2:
