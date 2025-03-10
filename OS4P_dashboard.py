@@ -96,7 +96,7 @@ def generate_sensitivity_report(sensitivity_data, base_params):
             base_case_index = next((i for i, v in enumerate(df["param_value"]) if v == base_params.get("num_outposts", -1)), None)
             # If not found, set a default index (first row)
         if base_case_index is None:
-        base_case_index = 0
+            base_case_index = 0
         elif param_name == "fuel_consumption":
             base_case_index = list(df["param_value"]).index(base_params["fuel_consumption"])
         elif param_name == "loan_years":
