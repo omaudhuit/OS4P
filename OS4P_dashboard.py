@@ -66,16 +66,34 @@ def sensitivity_analysis_co2(base_params, sensitivity_params):
             # Calculate metrics with the modified parameter
             calculation = calculate_os4p(**test_params)
             
+            def calculate_cost_efficiency(total_grant, co2_savings_all_outposts, co2_savings_lifetime):
+            cost_efficiency_1 = total_grant / co2_savings_all_outposts if co2_savings_all_outposts > 0 else float('inf')
+            cost_efficiency_2 = total_grant / co2_savings_lifetime if co2_savings_lifetime > 0 else float('inf')
+            return {"cost_efficiency_per_ton": cost_efficiency_1,
+            "cost_efficiency_lifetime": cost_efficiency_2}
+
+            
             # Store results for this parameter value
-            param_results.append({
-                "param_value": value,
-                "co2_savings_per_outpost": calculation["co2_savings_per_outpost"],
-                "co2_savings_all_outposts": calculation["co2_savings_all_outposts"],
-                "co2_savings_lifetime": calculation["co2_savings_lifetime"],
-                "monthly_debt_payment": calculation["monthly_debt_payment"],
-                "monthly_fee_unit": calculation["monthly_fee_unit"]
-            })
-        
+            
+            #param_results.append({
+                #"param_value": value,
+                #"co2_savings_per_outpost": calculation["co2_savings_per_outpost"],
+                #"co2_savings_all_outposts": calculation["co2_savings_all_outposts"],
+                #"co2_savings_lifetime": calculation["co2_savings_lifetime"],
+                #"monthly_debt_payment": calculation["monthly_debt_payment"],
+                #"monthly_fee_unit": calculation["monthly_fee_unit"]})
+                
+                cost_efficiency = calculate_cost_efficiency(total_grant, co2_savings_all_outposts, co2_savings_lifetime)
+
+            return {
+            "co2_savings_per_outpost": co2_savings_per_outpost,
+            "co2_savings_all_outposts": co2_savings_all_outposts,
+            "co2_savings_lifetime": co2_savings_lifetime,
+            "monthly_debt_payment": monthly_debt_payment,
+            "monthly_fee_unit": monthly_fee_unit,
+            "cost_efficiency_per_ton": cost_efficiency["cost_efficiency_per_ton"],
+            "cost_efficiency_lifetime": cost_efficiency["cost_efficiency_lifetime"]}
+       
         results[param_name] = param_results
     
     return results
@@ -326,19 +344,22 @@ def main():
     
     # Display base case metrics
     st.header("Base Case Results")
-    
+
     col1, col2, col3 = st.columns(3)
-    
+
     with col1:
-        st.metric("CO₂ Savings per Outpost (tonnes/year)", f"{base_results['co2_savings_per_outpost']:.1f}")
-        st.metric("Total CO₂ Savings per Year (tonnes)", f"{base_results['co2_savings_all_outposts']:.1f}")
-    
+    st.metric("CO₂ Savings per Outpost (tonnes/year)", f"{base_results['co2_savings_per_outpost']:.1f}")
+    st.metric("Total CO₂ Savings per Year (tonnes)", f"{base_results['co2_savings_all_outposts']:.1f}")
+
     with col2:
-        st.metric("Lifetime CO₂ Savings (tonnes)", f"{base_results['co2_savings_lifetime']:.1f}")
-        st.metric("Monthly Debt Payment ($)", f"${base_results['monthly_debt_payment']:.2f}")
-    
+    st.metric("Lifetime CO₂ Savings (tonnes)", f"{base_results['co2_savings_lifetime']:.1f}")
+    st.metric("Monthly Debt Payment (€)", f"€{base_results['monthly_debt_payment']:.2f}")
+
     with col3:
-        st.metric("Monthly Fee per Outpost ($)", f"${base_results['monthly_fee_unit']:.2f}")
+    st.metric("Monthly Fee per Outpost (€)", f"€{base_results['monthly_fee_unit']:.2f}")
+    st.metric("Cost Efficiency per Ton (€/tCO₂)", f"€{base_results['cost_efficiency_per_ton']:.0f}")
+    st.metric("Cost Efficiency (Lifetime) (€/tCO₂)", f"€{base_results['cost_efficiency_lifetime']:.0f}")
+
     
     # Sensitivity Analysis Section
     st.header("Sensitivity Analysis")
