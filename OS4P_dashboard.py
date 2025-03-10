@@ -348,17 +348,17 @@ def main():
     col1, col2, col3 = st.columns(3)
 
     with col1:
-    st.metric("CO₂ Savings per Outpost (tonnes/year)", f"{base_results['co2_savings_per_outpost']:.1f}")
-    st.metric("Total CO₂ Savings per Year (tonnes)", f"{base_results['co2_savings_all_outposts']:.1f}")
+        st.metric("CO₂ Savings per Outpost (tonnes/year)", f"{base_results['co2_savings_per_outpost']:.1f}")
+        st.metric("Total CO₂ Savings per Year (tonnes)", f"{base_results['co2_savings_all_outposts']:.1f}")
 
     with col2:
-    st.metric("Lifetime CO₂ Savings (tonnes)", f"{base_results['co2_savings_lifetime']:.1f}")
-    st.metric("Monthly Debt Payment (€)", f"€{base_results['monthly_debt_payment']:.2f}")
+        st.metric("Lifetime CO₂ Savings (tonnes)", f"{base_results['co2_savings_lifetime']:.1f}")
+        st.metric("Monthly Debt Payment (€)", f"€{base_results['monthly_debt_payment']:.2f}")
 
     with col3:
-    st.metric("Monthly Fee per Outpost (€)", f"€{base_results['monthly_fee_unit']:.2f}")
-    st.metric("Cost Efficiency per Ton (€/tCO₂)", f"€{base_results['cost_efficiency_per_ton']:.0f}")
-    st.metric("Cost Efficiency (Lifetime) (€/tCO₂)", f"€{base_results['cost_efficiency_lifetime']:.0f}")
+        st.metric("Monthly Fee per Outpost (€)", f"€{base_results['monthly_fee_unit']:.2f}")
+        st.metric("Cost Efficiency per Ton (€/tCO₂)", f"€{base_results['cost_efficiency_per_ton']:.0f}")
+        st.metric("Cost Efficiency (Lifetime) (€/tCO₂)", f"€{base_results['cost_efficiency_lifetime']:.0f}")
 
     
     # Sensitivity Analysis Section
