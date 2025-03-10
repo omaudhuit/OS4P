@@ -85,6 +85,9 @@ def calculate_os4p(params):
         "co2_savings_per_outpost": co2_savings_per_outpost,
         "co2_savings_all_outposts": co2_savings_all_outposts,
         "co2_savings_lifetime": co2_savings_lifetime,
+        "daily_fuel_consumption": daily_fuel_consumption,
+        "manned_co2_emissions": manned_co2_emissions,
+        "autonomous_co2_emissions": autonomous_co2_emissions,
         
         # Financial Metrics
         "total_capex": total_capex,
@@ -172,6 +175,100 @@ def create_co2_comparison_chart(co2_data):
     
     return fig
 
+def perform_sensitivity_analysis(base_params, sensitivity_param, range_values):
+    """
+    Perform sensitivity analysis by varying one parameter and keeping others constant
+    """
+    results = []
+    
+    for value in range_values:
+        # Create a copy of the base parameters
+        params = base_params.copy()
+        # Update the parameter to analyze
+        params[sensitivity_param] = value
+        # Calculate results with the new parameter value
+        result = calculate_os4p(params)
+        # Store the parameter value and corresponding CO2 savings
+        results.append({
+            'Parameter_Value': value,
+            'CO2_Savings_Per_Outpost': result['co2_savings_per_outpost'],
+            'CO2_Savings_All_Outposts': result['co2_savings_all_outposts'],
+            'Manned_CO2_Emissions': result['manned_co2_emissions'] / 1000,  # Convert to tonnes
+            'Autonomous_CO2_Emissions': result['autonomous_co2_emissions'] / 1000  # Convert to tonnes
+        })
+    
+    return pd.DataFrame(results)
+
+def create_sensitivity_chart(sensitivity_data, param_name, y_column, y_label):
+    """
+    Create a line chart for sensitivity analysis results
+    """
+    fig = px.line(
+        sensitivity_data, 
+        x='Parameter_Value', 
+        y=y_column,
+        markers=True,
+        title=f'Sensitivity of {y_label} to {param_name}',
+        labels={'Parameter_Value': param_name, y_column: y_label}
+    )
+    
+    fig.update_layout(
+        xaxis_title=param_name,
+        yaxis_title=y_label,
+        hovermode="x unified"
+    )
+    
+    return fig
+
+def create_emissions_sensitivity_chart(sensitivity_data, param_name):
+    """
+    Create a dual line chart showing both manned and autonomous emissions
+    """
+    fig = go.Figure()
+    
+    fig.add_trace(go.Scatter(
+        x=sensitivity_data['Parameter_Value'],
+        y=sensitivity_data['Manned_CO2_Emissions'],
+        mode='lines+markers',
+        name='Manned Emissions',
+        line=dict(color='#ff9999', width=2)
+    ))
+    
+    fig.add_trace(go.Scatter(
+        x=sensitivity_data['Parameter_Value'],
+        y=sensitivity_data['Autonomous_CO2_Emissions'],
+        mode='lines+markers',
+        name='Autonomous Emissions',
+        line=dict(color='#66b3ff', width=2)
+    ))
+    
+    # Add CO2 savings as a filled area
+    fig.add_trace(go.Scatter(
+        x=sensitivity_data['Parameter_Value'],
+        y=sensitivity_data['Manned_CO2_Emissions'],
+        mode='lines',
+        name='CO2 Savings',
+        fill='tonexty',
+        fillcolor='rgba(0, 255, 0, 0.2)',
+        line=dict(width=0)
+    ))
+    
+    fig.update_layout(
+        title=f'CO2 Emissions Sensitivity to {param_name}',
+        xaxis_title=param_name,
+        yaxis_title='CO2 Emissions (tonnes/year)',
+        hovermode="x unified",
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        )
+    )
+    
+    return fig
+
 def main():
     st.title("OS4P Interactive Dashboard")
     
@@ -238,7 +335,7 @@ def main():
     st.header("Base Case Results")
     
     # Create tabs for organized display
-    tab1, tab2, tab3 = st.tabs(["Overview", "Financial Details", "Visualizations"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Overview", "Financial Details", "Visualizations", "Sensitivity Analysis"])
     
     with tab1:
         # CO2 metrics
@@ -310,6 +407,185 @@ def main():
         st.subheader("CO₂ Emissions Comparison")
         co2_chart = create_co2_comparison_chart(results["co2_factors"])
         st.plotly_chart(co2_chart)
-
-if __name__ == "__main__":
-    main()
+    
+    with tab4:
+        st.subheader("CO₂ Emissions Sensitivity Analysis")
+        
+        # Parameter selection
+        st.markdown("Select a parameter to analyze its impact on CO₂ emissions:")
+        
+        sensitivity_param_options = {
+            "large_patrol_fuel": "Large Patrol Boat Fuel (L/h)",
+            "rib_fuel": "RIB Boat Fuel (L/h)",
+            "small_patrol_fuel": "Small Patrol Boat Fuel (L/h)",
+            "hours_per_day_base": "Patrol Hours per Day",
+            "operating_days_per_year": "Operating Days per Year",
+            "co2_factor": "CO₂ Factor (kg CO₂/L)",
+            "maintenance_emissions": "Maintenance Emissions (kg CO₂)"
+        }
+        
+        col1, col2 = st.columns([2, 3])
+        with col1:
+            selected_param = st.selectbox(
+                "Parameter to analyze:", 
+                list(sensitivity_param_options.keys()),
+                format_func=lambda x: sensitivity_param_options[x]
+            )
+            
+            # Define range based on selected parameter
+            if selected_param == "large_patrol_fuel":
+                min_val, max_val, default_val, step = 50, 300, params[selected_param], 25
+            elif selected_param == "rib_fuel":
+                min_val, max_val, default_val, step = 10, 100, params[selected_param], 10
+            elif selected_param == "small_patrol_fuel":
+                min_val, max_val, default_val, step = 5, 50, params[selected_param], 5
+            elif selected_param == "hours_per_day_base":
+                min_val, max_val, default_val, step = 4, 24, params[selected_param], 2
+            elif selected_param == "operating_days_per_year":
+                min_val, max_val, default_val, step = 200, 365, params[selected_param], 20
+            elif selected_param == "co2_factor":
+                min_val, max_val, default_val, step = 0.5, 3.0, params[selected_param], 0.25
+            elif selected_param == "maintenance_emissions":
+                min_val, max_val, default_val, step = 500, 5000, params[selected_param], 500
+            
+            min_range = st.number_input("Minimum value:", value=min_val, step=step)
+            max_range = st.number_input("Maximum value:", value=max_val, step=step)
+            num_steps = st.number_input("Number of data points:", value=10, min_value=5, max_value=20, step=1)
+        
+        with col2:
+            if min_range >= max_range:
+                st.error("Minimum value must be less than maximum value!")
+            else:
+                # Generate range values
+                if selected_param == "co2_factor":
+                    range_values = np.linspace(min_range, max_range, int(num_steps))
+                else:
+                    range_values = np.linspace(min_range, max_range, int(num_steps))
+                    if selected_param in ["hours_per_day_base", "operating_days_per_year"]:
+                        range_values = range_values.astype(int)
+                
+                # Perform sensitivity analysis
+                sensitivity_results = perform_sensitivity_analysis(params, selected_param, range_values)
+                
+                # Display data table
+                st.markdown("#### Sensitivity Analysis Results:")
+                st.dataframe(sensitivity_results.style.format({
+                    'Parameter_Value': '{:.2f}' if selected_param == "co2_factor" else '{:.0f}',
+                    'CO2_Savings_Per_Outpost': '{:.2f}', 
+                    'CO2_Savings_All_Outposts': '{:.2f}',
+                    'Manned_CO2_Emissions': '{:.2f}',
+                    'Autonomous_CO2_Emissions': '{:.2f}'
+                }))
+        
+        # Visualization of sensitivity analysis
+        st.markdown("#### Sensitivity Analysis Visualizations")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Total CO2 savings chart
+            co2_savings_chart = create_sensitivity_chart(
+                sensitivity_results, 
+                sensitivity_param_options[selected_param],
+                'CO2_Savings_All_Outposts', 
+                'Total CO₂ Savings (tonnes/year)'
+            )
+            st.plotly_chart(co2_savings_chart, use_container_width=True)
+        
+        with col2:
+            # Emissions comparison chart
+            emissions_chart = create_emissions_sensitivity_chart(
+                sensitivity_results,
+                sensitivity_param_options[selected_param]
+            )
+            st.plotly_chart(emissions_chart, use_container_width=True)
+        
+        # Tornado chart for relative importance of different parameters
+        st.subheader("Multi-Parameter Impact Analysis")
+        
+        # User can select which parameters to include in the tornado analysis
+        st.markdown("Analyze the impact of multiple parameters simultaneously:")
+        
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            analyze_patrol_fuel = st.checkbox("Patrol Boat Fuel Consumption", value=True)
+        with col2:
+            analyze_operations = st.checkbox("Operational Parameters", value=True) 
+        with col3:
+            analyze_emissions = st.checkbox("Emissions Parameters", value=True)
+        
+        if st.button("Run Multi-Parameter Analysis"):
+            # Initialize data for tornado chart
+            tornado_data = []
+            
+            # Base case CO2 savings
+            base_result = calculate_os4p(params)
+            base_savings = base_result['co2_savings_all_outposts']
+            
+            # Define variation percentage
+            variation_pct = 20  # 20% variation
+            
+            if analyze_patrol_fuel:
+                # Large patrol boat fuel
+                params_high = params.copy()
+                params_high['large_patrol_fuel'] = params['large_patrol_fuel'] * (1 + variation_pct/100)
+                high_result = calculate_os4p(params_high)
+                
+                params_low = params.copy()
+                params_low['large_patrol_fuel'] = params['large_patrol_fuel'] * (1 - variation_pct/100)
+                low_result = calculate_os4p(params_low)
+                
+                tornado_data.append({
+                    'Parameter': 'Large Patrol Fuel',
+                    'Low_Value': low_result['co2_savings_all_outposts'] - base_savings,
+                    'High_Value': high_result['co2_savings_all_outposts'] - base_savings
+                })
+                
+                # RIB fuel
+                params_high = params.copy()
+                params_high['rib_fuel'] = params['rib_fuel'] * (1 + variation_pct/100)
+                high_result = calculate_os4p(params_high)
+                
+                params_low = params.copy()
+                params_low['rib_fuel'] = params['rib_fuel'] * (1 - variation_pct/100)
+                low_result = calculate_os4p(params_low)
+                
+                tornado_data.append({
+                    'Parameter': 'RIB Fuel',
+                    'Low_Value': low_result['co2_savings_all_outposts'] - base_savings,
+                    'High_Value': high_result['co2_savings_all_outposts'] - base_savings
+                })
+            
+            if analyze_operations:
+                # Operating days
+                params_high = params.copy()
+                params_high['operating_days_per_year'] = min(365, int(params['operating_days_per_year'] * (1 + variation_pct/100)))
+                high_result = calculate_os4p(params_high)
+                
+                params_low = params.copy()
+                params_low['operating_days_per_year'] = max(200, int(params['operating_days_per_year'] * (1 - variation_pct/100)))
+                low_result = calculate_os4p(params_low)
+                
+                tornado_data.append({
+                    'Parameter': 'Operating Days',
+                    'Low_Value': low_result['co2_savings_all_outposts'] - base_savings,
+                    'High_Value': high_result['co2_savings_all_outposts'] - base_savings
+                })
+                
+                # Hours per day
+                params_high = params.copy()
+                params_high['hours_per_day_base'] = min(24, int(params['hours_per_day_base'] * (1 + variation_pct/100)))
+                high_result = calculate_os4p(params_high)
+                
+                params_low = params.copy()
+                params_low['hours_per_day_base'] = max(4, int(params['hours_per_day_base'] * (1 - variation_pct/100)))
+                low_result = calculate_os4p(params_low)
+                
+                tornado_data.append({
+                    'Parameter': 'Hours per Day',
+                    'Low_Value': low_result['co2_savings_all_outposts'] - base_savings,
+                    'High_Value': high_result['co2_savings_all_outposts'] - base_savings
+                })
+            
+            if analyze_emissions:
+                # CO2 factor
+                params_high = params.
