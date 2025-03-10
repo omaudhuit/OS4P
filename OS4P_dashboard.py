@@ -80,41 +80,27 @@ def main():
     with st.sidebar:
         st.header("User Inputs")
 
-        num_outposts = st.number_input("Number of Outposts", min_value=1, max_value=200, value=10, step=1)
-        fuel_consumption = st.number_input("Manned Fuel Consumption (L/hr)", min_value=1, max_value=100, value=25, step=1)
-        interest_rate = st.number_input("Interest Rate (%)", min_value=1.0, max_value=15.0, value=5.0, step=0.1)
-        loan_years = st.number_input("Project Lifetime (years)", min_value=3, max_value=25, value=10, step=1)
-        sla_premium = st.number_input("SLA Premium (%)", min_value=0.0, max_value=50.0, value=15.0, step=1.0)
+        num_outposts = st.number_input("Number of Outposts", min_value=1, max_value=200, value=10, step=1, format="%d")
+        fuel_consumption = st.number_input("Manned Fuel Consumption (L/hr)", min_value=1, max_value=100, value=25, step=1, format="%d")
+        interest_rate = st.number_input("Interest Rate (%)", min_value=1.0, max_value=15.0, value=5.0, step=0.1, format="%.1f")
+        loan_years = st.number_input("Project Lifetime (years)", min_value=3, max_value=25, value=10, step=1, format="%d")
+        sla_premium = st.number_input("SLA Premium (%)", min_value=0.0, max_value=50.0, value=15.0, step=1.0, format="%.1f")
 
         st.header("Operational Parameters")
-        operating_days_per_year = st.number_input("Operating Days per Year", min_value=200, max_value=365, value=300, step=1)
-        co2_factor = st.number_input("CO₂ Factor (kg CO₂ per liter)", min_value=0.5, max_value=3.0, value=1.0, step=0.1)
-        maintenance_emissions = st.number_input("Maintenance Emissions (kg CO₂)", min_value=500, max_value=5000, value=1594.3, step=10.0)
+        operating_days_per_year = st.number_input("Operating Days per Year", min_value=200, max_value=365, value=300, step=1, format="%d")
+        co2_factor = st.number_input("CO₂ Factor (kg CO₂ per liter)", min_value=0.5, max_value=3.0, value=1.0, step=0.1, format="%.1f")
+        maintenance_emissions = st.number_input("Maintenance Emissions (kg CO₂)", min_value=500, max_value=5000, value=1594, step=10, format="%d")
 
         st.header("CAPEX Inputs (€ per Outpost)")
-        microgrid_capex = st.number_input("Microgrid CAPEX", min_value=50000, max_value=200000, value=110000, step=5000)
-        drones_capex = st.number_input("Drones CAPEX", min_value=20000, max_value=100000, value=60000, step=5000)
-        communication_capex = st.number_input("Communication CAPEX", min_value=10000, max_value=50000, value=30000, step=5000)
-        security_capex = st.number_input("Security CAPEX", min_value=10000, max_value=50000, value=25000, step=5000)
-        installation_capex = st.number_input("Installation CAPEX", min_value=5000, max_value=30000, value=15000, step=5000)
+        microgrid_capex = st.number_input("Microgrid CAPEX", min_value=50000, max_value=200000, value=110000, step=5000, format="%d")
+        drones_capex = st.number_input("Drones CAPEX", min_value=20000, max_value=100000, value=60000, step=5000, format="%d")
+        communication_capex = st.number_input("Communication CAPEX", min_value=10000, max_value=50000, value=30000, step=5000, format="%d")
+        security_capex = st.number_input("Security CAPEX", min_value=10000, max_value=50000, value=25000, step=5000, format="%d")
+        installation_capex = st.number_input("Installation CAPEX", min_value=5000, max_value=30000, value=15000, step=5000, format="%d")
 
     # Store user inputs in dictionary
-    params = {
-        "num_outposts": num_outposts,
-        "fuel_consumption": fuel_consumption,
-        "interest_rate": interest_rate,
-        "loan_years": loan_years,
-        "sla_premium": sla_premium,
-        "operating_days_per_year": operating_days_per_year,
-        "co2_factor": co2_factor,
-        "maintenance_emissions": maintenance_emissions,
-        "microgrid_capex": microgrid_capex,
-        "drones_capex": drones_capex,
-        "communication_capex": communication_capex,
-        "security_capex": security_capex,
-        "installation_capex": installation_capex,
-    }
-
+    params = locals()
+    
     # Calculate results
     base_results = calculate_os4p(params)
 
