@@ -394,7 +394,7 @@ def create_emissions_sensitivity_chart(sensitivity_data, param_name):
     return fig
 
 def main():
-    st.title("OS4P Interactive Dashboard")
+    st.title("OS4P Green Sentinel")
     
     st.markdown("### Configure Your OS4P System Below")
     
