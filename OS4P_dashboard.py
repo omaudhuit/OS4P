@@ -527,13 +527,13 @@ def main():
 
 The European Union faces increasing pressures from climate change and escalating geopolitical challenges, particularly around border security and critical infrastructure resilience. Traditional surveillance methods and power solutions for remote outposts and border checkpoints predominantly rely on diesel generators and manned patrol operations, including diesel-powered vehicles and vessels. These conventional approaches:
 
-Contribute significantly to greenhouse gas emissions, exacerbating climate change impacts.
+ - Contribute significantly to greenhouse gas emissions, exacerbating climate change impacts.
 
-Suffer from logistical vulnerabilities, such as fuel supply disruptions in conflict-prone or extreme weather-affected regions.
+ - Suffer from logistical vulnerabilities, such as fuel supply disruptions in conflict-prone or extreme weather-affected regions.
 
-Offer limited resilience, leading to infrastructural vulnerabilities during extreme weather or crises.
+ - Offer limited resilience, leading to infrastructural vulnerabilities during extreme weather or crises.
 
-Lack scalability, hindering expansion and modernization of surveillance and secure communication capabilities.
+ - Lack scalability, hindering expansion and modernization of surveillance and secure communication capabilities.
 
 Consequently, there is an urgent need for integrated, autonomous, and sustainable energy solutions to support border security and enhance civil protection across the EU while aligning with stringent climate and environmental targets.
 
@@ -563,25 +563,25 @@ AI-Powered Analytics: Real-time threat detection, surveillance analytics, and au
 
 Each OS4P unit integrates advanced telecommunications infrastructure:
 
-Secure Communications: Utilizing 5G, Starlink satellite services, and secure LINK-16 communications, ensuring robust real-time data transfer and connectivity.
+ - Secure Communications: Utilizing 5G, Starlink satellite services, and secure LINK-16 communications, ensuring robust real-time data transfer and connectivity.
 
-Structural Design: Robust tower structure suitable for harsh environments, ensuring resilience against extreme weather and operational disruptions.
+ - Structural Design: Robust tower structure suitable for harsh environments, ensuring resilience against extreme weather and operational disruptions.
 
         Environmental Impact
 
 The Green Sentinel project offers significant environmental and climate benefits:
 
-CO₂ Emission Reductions: Each OS4P unit prevents between 18 to 30 metric tons of CO₂ emissions annually by replacing diesel-generated power. Over 10 years, the total CO₂ avoided by 45 units is projected between 8,100 to 13,500 metric tons.
+ - CO₂ Emission Reductions: Each OS4P unit prevents between 18 to 30 metric tons of CO₂ emissions annually by replacing diesel-generated power. Over 10 years, the total CO₂ avoided by 45 units is projected between 8,100 to 13,500 metric tons.
 
-Additional CO₂ Savings: By replacing diesel-powered patrol vessels and vehicles, the cumulative 10-year CO₂ savings across a broader deployment (e.g., 200 units) could exceed 60 million kilograms.
+ - Additional CO₂ Savings: By replacing diesel-powered patrol vessels and vehicles, the cumulative 10-year CO₂ savings across a broader deployment (e.g., 200 units) could exceed 60 million kilograms.
 
         Operational and Socio-Economic Advantages
 
-Security Enhancement: Continuous, automated surveillance improves response time and situational awareness, significantly enhancing border and infrastructure security.
+ - Security Enhancement: Continuous, automated surveillance improves response time and situational awareness, significantly enhancing border and infrastructure security.
 
-Job Creation: Local jobs in installation, operation, and ongoing maintenance.
+ - Job Creation: Local jobs in installation, operation, and ongoing maintenance.
 
-Innovation Leadership: Demonstrates a scalable, sustainable, and replicable model aligning with the EU’s Green Deal and security frameworks.
+ - Innovation Leadership: Demonstrates a scalable, sustainable, and replicable model aligning with the EU’s Green Deal and security frameworks.
 
 In summary, Green Sentinel (OS4P) addresses critical EU security and climate resilience challenges by integrating renewable energy and autonomous surveillance, setting a new standard for sustainable, resilient, and efficient border security and critical infrastructure protection.
 
