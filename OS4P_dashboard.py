@@ -293,7 +293,7 @@ def main():
     
     st.markdown("""
     This dashboard analyzes the sensitivity of CO₂ savings and financial metrics to various parameters 
-    in the Outpost Security for Pipelines (OS4P) system. Adjust the parameters below to see how they 
+    of the OS4P system. Adjust the parameters below to see how they 
     impact environmental and financial outcomes.
     """)
     
