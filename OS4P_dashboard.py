@@ -106,7 +106,6 @@ def calculate_os4p(params):
     tco_per_outpost = tco / num_outposts
 
     # LCOE Calculation (€/kWh)
-    # Annualize CAPEX using the Capital Recovery Factor (CRF)
     r = interest_rate / 100  # convert to decimal
     n = loan_years
     if (1+r)**n - 1 != 0:
@@ -514,12 +513,9 @@ def main():
     # Calculate results
     results = calculate_os4p(params)
 
-    # Display comprehensive results in the main area
-    st.header("Base Case Results")
-    
-    # Create tabs for organized display, including the new 'Introduction' tab
-    tab_intro, tab_overview, tab_financial, tab_visualizations, tab_sensitivity = st.tabs(
-        ["Introduction", "Overview", "Financial Details", "Visualizations", "Sensitivity Analysis"]
+    # Create tabs for organized display, including the new 'LCOE Calculation' tab
+    tab_intro, tab_overview, tab_financial, tab_lcoe, tab_visualizations, tab_sensitivity = st.tabs(
+        ["Introduction", "Overview", "Financial Details", "LCOE Calculation", "Visualizations", "Sensitivity Analysis"]
     )
     
     with tab_intro:
@@ -559,11 +555,7 @@ def main():
             st.metric("OPEX per Outpost (€/year)", f"{results['annual_opex_per_outpost']:,.0f}")
         with col3:
             st.metric("Total Cost of Ownership (€)", f"{results['tco']:,.0f}")
-            st.metric("TCO per Outpost (€)", f"{results['tco_per_outpost']:,.0f}")
-        
-        # LCOE metric display
-        st.subheader("LCOE Calculation")
-        st.metric("LCOE (€/kWh)", f"{results['lcoe']:.4f}")
+            st.metric("TCO per Outpost (€)", f"{results['tco_per_outposts']:,.0f}" if "tco_per_outposts" in results else f"{results['tco_per_outpost']:,.0f}")
         
         # Efficiency and Innovation Fund metrics
         st.subheader("Efficiency Metrics & Innovation Fund Score")
@@ -660,6 +652,36 @@ def main():
         opex_df = pd.DataFrame.from_dict(results["opex_breakdown"], orient='index', columns=["Amount (€)"])
         opex_df["Percentage"] = (opex_df["Amount (€)"] / opex_df["Amount (€)"].sum() * 100).round(1).astype(str) + '%'
         st.dataframe(opex_df)
+    
+    with tab_lcoe:
+        st.header("LCOE Calculation")
+        st.markdown("""
+        **Levelized Cost of Electricity (LCOE)** is a key metric that represents the cost per unit of electricity generated over the lifetime of the system.
+        
+        The LCOE is calculated as:
+        
+        **LCOE = (Annualized CAPEX per Outpost + Annual OPEX per Outpost) / Annual Energy Production per Outpost**
+        """)
+        st.metric("LCOE (€/kWh)", f"{results['lcoe']:.4f}")
+        
+        # Re-calculate intermediate values for breakdown
+        r = interest_rate / 100
+        n = loan_years
+        if (1+r)**n - 1 != 0:
+            CRF = (r * (1+r)**n) / ((1+r)**n - 1)
+        else:
+            CRF = 0
+        total_capex_per_outpost = params["microgrid_capex"] + params["drones_capex"] + params["bos_capex"]
+        annualized_capex = total_capex_per_outpost * CRF
+        annual_opex_per_outpost = results["annual_opex_per_outpost"]
+        annual_energy = annual_energy_production
+        
+        lcoe_breakdown = pd.DataFrame({
+            "Metric": ["Annualized CAPEX per Outpost (€/year)", "Annual OPEX per Outpost (€/year)", "Annual Energy Production (kWh/year)"],
+            "Value": [annualized_capex, annual_opex_per_outpost, annual_energy]
+        })
+        st.markdown("**Calculation Breakdown:**")
+        st.table(lcoe_breakdown)
     
     with tab_visualizations:
         # Cost breakdown visualization
