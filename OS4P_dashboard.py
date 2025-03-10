@@ -32,6 +32,9 @@ def calculate_os4p(params):
     communications_opex = params["communications_opex"]
     security_opex = params["security_opex"]
 
+    # Optional detailed CAPEX components
+    detailed_capex = params.get("detailed_capex", None)
+
     # ✅ CO₂ Savings Calculation (Including GENSET)
     genset_fuel_per_hour = 2.5  # Liters per hour (GENSET)
     genset_fuel_per_day = genset_fuel_per_hour * 24  # 24-hour consumption
@@ -80,7 +83,21 @@ def calculate_os4p(params):
     tco = total_capex + lifetime_opex
     tco_per_outpost = tco / num_outposts
 
-    return {
+    # Prepare standard CAPEX breakdown
+    capex_breakdown = {
+        "Microgrid": microgrid_capex * num_outposts,
+        "Drones": drones_capex * num_outposts,
+        "BOS (Balance of System)": bos_capex * num_outposts
+    }
+    
+    # Prepare detailed CAPEX breakdown if available
+    detailed_capex_breakdown = None
+    if detailed_capex:
+        detailed_capex_breakdown = {}
+        for category, value in detailed_capex.items():
+            detailed_capex_breakdown[category] = value * num_outposts
+
+    result = {
         # CO2 Metrics
         "co2_savings_per_outpost": co2_savings_per_outpost,
         "co2_savings_all_outposts": co2_savings_all_outposts,
@@ -113,11 +130,7 @@ def calculate_os4p(params):
         "lifetime_debt_payment": lifetime_debt_payment,
         
         # Breakdowns for visualizations
-        "capex_breakdown": {
-            "Microgrid": microgrid_capex * num_outposts,
-            "Drones": drones_capex * num_outposts,
-            "BOS (Balance of System)": bos_capex * num_outposts
-        },
+        "capex_breakdown": capex_breakdown,
         "opex_breakdown": {
             "Maintenance": maintenance_opex * num_outposts,
             "Communications": communications_opex * num_outposts,
@@ -128,15 +141,36 @@ def calculate_os4p(params):
             "Autonomous Emissions": autonomous_co2_emissions / 1000
         }
     }
+    
+    # Add detailed CAPEX breakdown if available
+    if detailed_capex_breakdown:
+        result["detailed_capex_breakdown"] = detailed_capex_breakdown
+    
+    return result
 
-def create_cost_breakdown_chart(capex_data, opex_data):
-    capex_df = pd.DataFrame(list(capex_data.items()), columns=['Category', 'Value'])
-    capex_df['Type'] = 'CAPEX'
-    
-    opex_df = pd.DataFrame(list(opex_data.items()), columns=['Category', 'Value'])
-    opex_df['Type'] = 'OPEX (Annual)'
-    
-    combined_df = pd.concat([capex_df, opex_df])
+def create_cost_breakdown_chart(capex_data, opex_data, detailed_capex=None):
+    if detailed_capex is not None:
+        # Create detailed CAPEX breakdown
+        capex_detailed_df = pd.DataFrame(list(detailed_capex.items()), columns=['Category', 'Value'])
+        capex_detailed_df['Type'] = 'CAPEX (Detailed)'
+        
+        # Create OPEX breakdown
+        opex_df = pd.DataFrame(list(opex_data.items()), columns=['Category', 'Value'])
+        opex_df['Type'] = 'OPEX (Annual)'
+        
+        # Combine dataframes
+        combined_df = pd.concat([capex_detailed_df, opex_df])
+    else:
+        # Use simple CAPEX breakdown
+        capex_df = pd.DataFrame(list(capex_data.items()), columns=['Category', 'Value'])
+        capex_df['Type'] = 'CAPEX'
+        
+        # Create OPEX breakdown
+        opex_df = pd.DataFrame(list(opex_data.items()), columns=['Category', 'Value'])
+        opex_df['Type'] = 'OPEX (Annual)'
+        
+        # Combine dataframes
+        combined_df = pd.concat([capex_df, opex_df])
     
     fig = px.bar(combined_df, x='Category', y='Value', color='Type', 
                  title='Cost Breakdown', 
@@ -297,10 +331,44 @@ def main():
         co2_factor = st.number_input("CO₂ Factor (kg CO₂ per liter)", min_value=0.5, max_value=3.0, value=1.0, step=0.1, format="%.1f")
         maintenance_emissions = st.number_input("Maintenance Emissions (kg CO₂)", min_value=500, max_value=5000, value=1594, step=10, format="%d")
 
-        st.subheader("CAPEX Inputs (€ per Outpost)")
-        microgrid_capex = st.number_input("Microgrid CAPEX", min_value=50000, max_value=200000, value=110000, step=5000, format="%d")
-        drones_capex = st.number_input("Drones CAPEX", min_value=20000, max_value=100000, value=60000, step=5000, format="%d")
-        bos_capex = st.number_input("BOS (Balance of System) CAPEX", min_value=10000, max_value=100000, value=40000, step=5000, format="%d")
+        # Main CAPEX inputs
+        st.subheader("CAPEX Summary (€ per Outpost)")
+        
+        # CAPEX Detailed Breakdown toggle
+        show_capex_detail = st.checkbox("Show detailed CAPEX breakdown", value=False)
+        
+        if show_capex_detail:
+            st.markdown("#### Microgrid CAPEX Breakdown")
+            solar_pv_capex = st.number_input("Solar PV System (10kWp)", min_value=5000, max_value=50000, value=15000, step=1000, format="%d")
+            wind_turbine_capex = st.number_input("Wind Turbine (3kW)", min_value=5000, max_value=50000, value=12000, step=1000, format="%d")
+            battery_capex = st.number_input("Battery Storage (30kWh)", min_value=10000, max_value=100000, value=36000, step=1000, format="%d")
+            telecom_capex = st.number_input("Telecommunications", min_value=5000, max_value=50000, value=15000, step=1000, format="%d")
+            bos_micro_capex = st.number_input("Microgrid BOS", min_value=5000, max_value=50000, value=20000, step=1000, format="%d")
+            install_capex = st.number_input("Installation & Commissioning", min_value=5000, max_value=50000, value=12000, step=1000, format="%d")
+            
+            # Calculate total microgrid CAPEX from components
+            microgrid_capex = solar_pv_capex + wind_turbine_capex + battery_capex + telecom_capex + bos_micro_capex + install_capex
+            st.markdown(f"**Total Microgrid CAPEX: €{microgrid_capex:,}**")
+            
+            st.markdown("#### Drone System CAPEX Breakdown")
+            drone_units = st.number_input("Number of Drones per Outpost", min_value=1, max_value=10, value=3, step=1, format="%d")
+            drone_unit_cost = st.number_input("Cost per Drone (€)", min_value=5000, max_value=50000, value=20000, step=1000, format="%d")
+            
+            # Calculate total drone CAPEX
+            drones_capex = drone_units * drone_unit_cost
+            st.markdown(f"**Total Drones CAPEX: €{drones_capex:,}**")
+            
+            st.markdown("#### Other CAPEX")
+            bos_capex = st.number_input("Additional BOS CAPEX", min_value=0, max_value=100000, value=40000, step=5000, format="%d")
+            
+            # Show total CAPEX
+            total_capex_per_outpost = microgrid_capex + drones_capex + bos_capex
+            st.markdown(f"**Total CAPEX per Outpost: €{total_capex_per_outpost:,}**")
+        else:
+            # Simple CAPEX inputs without breakdown
+            microgrid_capex = st.number_input("Microgrid CAPEX", min_value=50000, max_value=200000, value=110000, step=5000, format="%d")
+            drones_capex = st.number_input("Drones CAPEX", min_value=20000, max_value=100000, value=60000, step=5000, format="%d")
+            bos_capex = st.number_input("BOS (Balance of System) CAPEX", min_value=10000, max_value=100000, value=40000, step=5000, format="%d")
         
         st.subheader("OPEX Inputs (€ per Outpost per Year)")
         maintenance_opex = st.number_input("Maintenance OPEX", min_value=1000, max_value=50000, value=15000, step=1000, format="%d")
@@ -320,13 +388,32 @@ def main():
         "operating_days_per_year": operating_days_per_year,
         "co2_factor": co2_factor,
         "maintenance_emissions": maintenance_emissions,
-        "microgrid_capex": microgrid_capex,
-        "drones_capex": drones_capex,
-        "bos_capex": bos_capex,
         "maintenance_opex": maintenance_opex,
         "communications_opex": communications_opex,
         "security_opex": security_opex
     }
+    
+    # Add CAPEX parameters based on whether detailed breakdown is used
+    if show_capex_detail:
+        params["microgrid_capex"] = microgrid_capex
+        params["drones_capex"] = drones_capex
+        params["bos_capex"] = bos_capex
+        
+        # Add detailed CAPEX breakdown
+        params["detailed_capex"] = {
+            "Solar PV (10kWp)": solar_pv_capex,
+            "Wind Turbine (3kW)": wind_turbine_capex,
+            "Battery Storage (30kWh)": battery_capex,
+            "Telecommunications": telecom_capex,
+            "Microgrid BOS": bos_micro_capex,
+            "Installation & Commissioning": install_capex,
+            f"Drones ({drone_units}x)": drones_capex,
+            "Additional BOS": bos_capex
+        }
+    else:
+        params["microgrid_capex"] = microgrid_capex
+        params["drones_capex"] = drones_capex
+        params["bos_capex"] = bos_capex
     
     # Calculate results
     results = calculate_os4p(params)
@@ -387,9 +474,17 @@ def main():
         
         # CAPEX Breakdown
         st.subheader("CAPEX Breakdown")
-        capex_df = pd.DataFrame.from_dict(results["capex_breakdown"], orient='index', columns=["Amount (€)"])
-        capex_df["Percentage"] = (capex_df["Amount (€)"] / capex_df["Amount (€)"].sum() * 100).round(1).astype(str) + '%'
-        st.dataframe(capex_df)
+        
+        # Check if detailed CAPEX breakdown is available
+        if "detailed_capex_breakdown" in results:
+            detailed_capex_df = pd.DataFrame.from_dict(results["detailed_capex_breakdown"], orient='index', columns=["Amount (€)"])
+            detailed_capex_df["Percentage"] = (detailed_capex_df["Amount (€)"] / detailed_capex_df["Amount (€)"].sum() * 100).round(1).astype(str) + '%'
+            st.dataframe(detailed_capex_df)
+            st.markdown("**Detailed CAPEX Breakdown**")
+        else:
+            capex_df = pd.DataFrame.from_dict(results["capex_breakdown"], orient='index', columns=["Amount (€)"])
+            capex_df["Percentage"] = (capex_df["Amount (€)"] / capex_df["Amount (€)"].sum() * 100).round(1).astype(str) + '%'
+            st.dataframe(capex_df)
         
         # OPEX Breakdown
         st.subheader("Annual OPEX Breakdown")
@@ -400,7 +495,12 @@ def main():
     with tab3:
         # Cost breakdown visualization
         st.subheader("Cost Breakdown Visualization")
-        cost_chart = create_cost_breakdown_chart(results["capex_breakdown"], results["opex_breakdown"])
+        if "detailed_capex_breakdown" in results:
+            cost_chart = create_cost_breakdown_chart(results["capex_breakdown"], results["opex_breakdown"], 
+                                                    detailed_capex=results["detailed_capex_breakdown"])
+        else:
+            cost_chart = create_cost_breakdown_chart(results["capex_breakdown"], results["opex_breakdown"])
+        
         st.plotly_chart(cost_chart)
         
         # CO2 comparison visualization
