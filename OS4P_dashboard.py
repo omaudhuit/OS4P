@@ -67,10 +67,10 @@ def sensitivity_analysis_co2(base_params, sensitivity_params):
             calculation = calculate_os4p(**test_params)
             
             def calculate_cost_efficiency(total_grant, co2_savings_all_outposts, co2_savings_lifetime):
-            cost_efficiency_1 = total_grant / co2_savings_all_outposts if co2_savings_all_outposts > 0 else float('inf')
-            cost_efficiency_2 = total_grant / co2_savings_lifetime if co2_savings_lifetime > 0 else float('inf')
+                cost_efficiency_1 = total_grant / co2_savings_all_outposts if co2_savings_all_outposts > 0 else float('inf')
+                cost_efficiency_2 = total_grant / co2_savings_lifetime if co2_savings_lifetime > 0 else float('inf')
             return {"cost_efficiency_per_ton": cost_efficiency_1,
-            "cost_efficiency_lifetime": cost_efficiency_2}
+                "cost_efficiency_lifetime": cost_efficiency_2}
 
             
             # Store results for this parameter value
