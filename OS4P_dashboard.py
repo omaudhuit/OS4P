@@ -114,7 +114,7 @@ def main():
         opex_security = st.number_input("Security OPEX", min_value=5000, max_value=50000, value=20000, step=5000, format="%d")
 
     # Store user inputs in dictionary
-    params = locals()
+    params = {key: value for key, value in locals().items() if key in calculate_os4p.__code__.co_varnames}
     
     # Calculate results
     base_results = calculate_os4p(params)
