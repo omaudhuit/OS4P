@@ -5,101 +5,302 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OS4P Calculator</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <style>
-        body { background-color: #f8f9fa; padding: 2rem; }
-        .card { box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); margin-bottom: 2rem; }
-        .results-card { display: none; }
-        .form-label { font-weight: 600; }
-        .chart-container { min-height: 400px; margin-top: 2rem; }
-        #loading { display: none; text-align: center; margin: 2rem 0; }
+        body {
+            background-color: #f8f9fa;
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+        .header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 1rem;
+        }
+        .card {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        .results-card {
+            display: none;
+        }
+        .form-label {
+            font-weight: 600;
+        }
+        .nav-tabs {
+            margin-bottom: 1.5rem;
+        }
+        .info-icon {
+            cursor: pointer;
+            color: #6c757d;
+            margin-left: 0.5rem;
+        }
+        .chart-container {
+            min-height: 400px;
+            margin-top: 2rem;
+        }
+        #loading {
+            display: none;
+            text-align: center;
+            margin: 2rem 0;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>OS4P Calculator</h1>
-        <p class="lead">Calculate CO₂ savings and financial metrics for autonomous outpost systems</p>
+        <!-- Header -->
+        <div class="header">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1>OS4P Calculator</h1>
+                    <p class="lead">Calculate CO₂ savings and financial metrics for autonomous outpost systems</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="/sensitivity-analysis" class="btn btn-outline-primary">Sensitivity Analysis</a>
+                </div>
+            </div>
+        </div>
 
+        <!-- Main content -->
         <div class="row">
+            <!-- Input form -->
             <div class="col-lg-5">
                 <div class="card">
-                    <div class="card-header bg-primary text-white"><h4 class="mb-0">Input Parameters</h4></div>
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">Input Parameters</h4>
+                    </div>
                     <div class="card-body">
                         <form id="calculatorForm">
                             <div class="mb-3">
-                                <label class="form-label">Number of Outposts</label>
-                                <input type="number" class="form-control" id="num_outposts" min="1" value="5" required>
+                                <label for="num_outposts" class="form-label">Number of Outposts</label>
+                                <input type="number" class="form-control" id="num_outposts" name="num_outposts" min="1" value="5" required>
+                                <div class="form-text">Number of autonomous outposts to deploy</div>
                             </div>
+                            
                             <div class="mb-3">
-                                <label class="form-label">Fuel Consumption (L/hr)</label>
-                                <input type="number" class="form-control" id="fuel_consumption" min="1" value="25" required>
+                                <label for="fuel_consumption" class="form-label">Fuel Consumption (L/hr)</label>
+                                <input type="number" class="form-control" id="fuel_consumption" name="fuel_consumption" min="0" step="0.1" value="25" required>
+                                <div class="form-text">Current hourly fuel consumption per outpost</div>
                             </div>
+                            
                             <div class="mb-3">
-                                <label class="form-label">Interest Rate (%)</label>
-                                <input type="number" class="form-control" id="interest_rate" min="0" step="0.1" value="5" required>
+                                <label for="interest_rate" class="form-label">Interest Rate (%)</label>
+                                <input type="number" class="form-control" id="interest_rate" name="interest_rate" min="0" step="0.1" value="5" required>
+                                <div class="form-text">Annual interest rate for financing</div>
                             </div>
+                            
                             <div class="mb-3">
-                                <label class="form-label">Loan Term (years)</label>
-                                <input type="number" class="form-control" id="loan_years" min="1" value="10" required>
+                                <label for="loan_years" class="form-label">Loan Term (years)</label>
+                                <input type="number" class="form-control" id="loan_years" name="loan_years" min="1" value="10" required>
+                                <div class="form-text">Duration of the financing term</div>
                             </div>
+                            
                             <div class="mb-3">
-                                <label class="form-label">SLA Premium (%)</label>
-                                <input type="number" class="form-control" id="sla_premium" min="0" step="0.1" value="15" required>
+                                <label for="sla_premium" class="form-label">SLA Premium (%)</label>
+                                <input type="number" class="form-control" id="sla_premium" name="sla_premium" min="0" step="0.1" value="15" required>
+                                <div class="form-text">Service Level Agreement premium percentage</div>
                             </div>
+                            
                             <button type="submit" class="btn btn-primary w-100">Calculate</button>
                         </form>
                     </div>
                 </div>
             </div>
-
+            
+            <!-- Results -->
             <div class="col-lg-7">
                 <div id="loading">
-                    <div class="spinner-border text-primary"></div>
-                    <p>Calculating results...</p>
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Calculating results...</p>
                 </div>
                 
                 <div id="resultsCard" class="card results-card">
-                    <div class="card-header bg-success text-white"><h4 class="mb-0">Results</h4></div>
+                    <div class="card-header bg-success text-white">
+                        <h4 class="mb-0">Results</h4>
+                    </div>
                     <div class="card-body">
-                        <h5>CO₂ Savings per Outpost</h5>
-                        <h2 id="co2_per_outpost">--</h2>
-                        <h5>Lifetime CO₂ Savings</h5>
-                        <h2 id="co2_lifetime">--</h2>
-                        <h5>Monthly Fee per Outpost</h5>
-                        <h2 id="monthly_fee">--</h2>
+                        <ul class="nav nav-tabs" id="resultTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="environmental-tab" data-bs-toggle="tab" data-bs-target="#environmental" type="button" role="tab" aria-controls="environmental" aria-selected="true">Environmental</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="financial-tab" data-bs-toggle="tab" data-bs-target="#financial" type="button" role="tab" aria-controls="financial" aria-selected="false">Financial</button>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content" id="resultTabsContent">
+                            <!-- Environmental Tab -->
+                            <div class="tab-pane fade show active" id="environmental" role="tabpanel" aria-labelledby="environmental-tab">
+                                <div class="row mt-4">
+                                    <div class="col-md-6">
+                                        <div class="card mb-3 h-100">
+                                            <div class="card-body text-center">
+                                                <h5 class="card-title">Annual CO₂ Savings Per Outpost</h5>
+                                                <h2 class="text-success mt-3" id="co2_per_outpost">--</h2>
+                                                <p class="text-muted">tonnes CO₂/year</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card mb-3 h-100">
+                                            <div class="card-body text-center">
+                                                <h5 class="card-title">Total Annual CO₂ Savings</h5>
+                                                <h2 class="text-success mt-3" id="co2_all_outposts">--</h2>
+                                                <p class="text-muted">tonnes CO₂/year</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="card mb-3">
+                                    <div class="card-body text-center">
+                                        <h5 class="card-title">Total Lifetime CO₂ Savings</h5>
+                                        <h2 class="text-success mt-3" id="co2_lifetime">--</h2>
+                                        <p class="text-muted">tonnes CO₂ over project lifetime</p>
+                                        <div class="progress mt-3">
+                                            <div class="progress-bar bg-success" id="co2_progress" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                        <p class="mt-2" id="co2_equivalent">Equivalent to removing -- cars from the road for a year</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Financial Tab -->
+                            <div class="tab-pane fade" id="financial" role="tabpanel" aria-labelledby="financial-tab">
+                                <div class="row mt-4">
+                                    <div class="col-md-6">
+                                        <div class="card mb-3 h-100">
+                                            <div class="card-body text-center">
+                                                <h5 class="card-title">Monthly Debt Payment</h5>
+                                                <h2 class="text-primary mt-3" id="monthly_debt">--</h2>
+                                                <p class="text-muted">EUR/month</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card mb-3 h-100">
+                                            <div class="card-body text-center">
+                                                <h5 class="card-title">Monthly Fee per Outpost</h5>
+                                                <h2 class="text-primary mt-3" id="monthly_fee">--</h2>
+                                                <p class="text-muted">EUR/month/outpost</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Financial Summary</h5>
+                                        <table class="table mt-3">
+                                            <tbody>
+                                                <tr>
+                                                    <th scope="row">Total Capital Expenditure</th>
+                                                    <td id="total_capex">--</td>
+                                                </tr>
+                                                <tr>
+                                                    <th scope="row">Grant Coverage (60%)</th>
+                                                    <td id="grant_coverage">--</td>
+                                                </tr>
+                                                <tr>
+                                                    <th scope="row">Remaining Financed Amount</th>
+                                                    <td id="financed_amount">--</td>
+                                                </tr>
+                                                <tr>
+                                                    <th scope="row">Total Interest Paid</th>
+                                                    <td id="total_interest">--</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.getElementById("calculatorForm").addEventListener("submit", function(e) {
-            e.preventDefault();
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('calculatorForm');
+            const resultsCard = document.getElementById('resultsCard');
+            const loading = document.getElementById('loading');
             
-            document.getElementById("loading").style.display = "block";
-            document.getElementById("resultsCard").style.display = "none";
-
-            const requestData = {
-                num_outposts: parseInt(document.getElementById("num_outposts").value),
-                fuel_consumption: parseFloat(document.getElementById("fuel_consumption").value),
-                interest_rate: parseFloat(document.getElementById("interest_rate").value),
-                loan_years: parseInt(document.getElementById("loan_years").value),
-                sla_premium: parseFloat(document.getElementById("sla_premium").value),
-            };
-
-            fetch("http://127.0.0.1:8000/", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(requestData)
-            })
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById("co2_per_outpost").textContent = data.co2_savings_per_outpost.toFixed(1);
-                document.getElementById("co2_lifetime").textContent = data.co2_savings_lifetime.toFixed(1);
-                document.getElementById("monthly_fee").textContent = data.monthly_fee_unit.toFixed(2);
-                document.getElementById("loading").style.display = "none";
-                document.getElementById("resultsCard").style.display = "block";
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Show loading, hide results
+                loading.style.display = 'block';
+                resultsCard.style.display = 'none';
+                
+                // Gather form data
+                const formData = new FormData(form);
+                
+                // Send request to server
+                fetch('/', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Hide loading, show results
+                    loading.style.display = 'none';
+                    resultsCard.style.display = 'block';
+                    
+                    // Update environmental metrics
+                    document.getElementById('co2_per_outpost').textContent = data.co2_savings_per_outpost.toFixed(1);
+                    document.getElementById('co2_all_outposts').textContent = data.co2_savings_all_outposts.toFixed(1);
+                    document.getElementById('co2_lifetime').textContent = data.co2_savings_lifetime.toFixed(1);
+                    
+                    // Calculate car equivalent (rough estimate: 4.6 tonnes CO2 per car per year)
+                    const carsEquivalent = Math.round(data.co2_savings_lifetime / 4.6);
+                    document.getElementById('co2_equivalent').textContent = Equivalent to removing ${carsEquivalent.toLocaleString()} cars from the road for a year;
+                    
+                    // Set progress bar - assuming 1000 tonnes is max
+                    const progressPercent = Math.min(data.co2_savings_lifetime / 1000 * 100, 100);
+                    const progressBar = document.getElementById('co2_progress');
+                    progressBar.style.width = ${progressPercent}%;
+                    progressBar.setAttribute('aria-valuenow', progressPercent);
+                    
+                    // Update financial metrics
+                    document.getElementById('monthly_debt').textContent = data.monthly_debt_payment.toFixed(2);
+                    document.getElementById('monthly_fee').textContent = data.monthly_fee_unit.toFixed(2);
+                    
+                    // Calculate additional financial metrics
+                    const num_outposts = parseInt(formData.get('num_outposts'));
+                    const microgrid_capex = 110000;
+                    const drones_capex = 60000;
+                    const total_capex = (microgrid_capex + drones_capex) * num_outposts;
+                    const pilot_markup = total_capex * 1.25;
+                    const total_grant = pilot_markup * 0.6;
+                    const debt = pilot_markup - total_grant;
+                    const loan_years = parseInt(formData.get('loan_years'));
+                    const total_payments = data.monthly_debt_payment * loan_years * 12;
+                    const total_interest = total_payments - debt;
+                    
+                    // Format currency values
+                    const formatCurrency = (value) => {
+                        return new Intl.NumberFormat('en-EU', { 
+                            style: 'currency', 
+                            currency: 'EUR',
+                            maximumFractionDigits: 0
+                        }).format(value);
+                    };
+                    
+                    document.getElementById('total_capex').textContent = formatCurrency(pilot_markup);
+                    document.getElementById('grant_coverage').textContent = formatCurrency(total_grant);
+                    document.getElementById('financed_amount').textContent = formatCurrency(debt);
+                    document.getElementById('total_interest').textContent = formatCurrency(total_interest);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    loading.style.display = 'none';
+                    alert('An error occurred while calculating results. Please try again.');
+                });
             });
         });
     </script>
