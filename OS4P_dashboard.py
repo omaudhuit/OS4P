@@ -513,6 +513,9 @@ def main():
         with col3:
             analyze_emissions = st.checkbox("Emissions Parameters", value=True)
         
+        variation_pct = st.slider("Parameter Variation (%)", min_value=5, max_value=50, value=20, step=5,
+                              help="How much each parameter will be varied up and down from the base case")
+        
         if st.button("Run Multi-Parameter Analysis"):
             # Initialize data for tornado chart
             tornado_data = []
@@ -520,9 +523,6 @@ def main():
             # Base case CO2 savings
             base_result = calculate_os4p(params)
             base_savings = base_result['co2_savings_all_outposts']
-            
-            # Define variation percentage
-            variation_pct = 20  # 20% variation
             
             if analyze_patrol_fuel:
                 # Large patrol boat fuel
@@ -683,3 +683,6 @@ def main():
                 st.dataframe(elasticity_df.style.format({'Elasticity': '{:.3f}'}))
             else:
                 st.warning("Please select at least one parameter group to analyze.")
+
+if __name__ == "__main__":
+    main()
