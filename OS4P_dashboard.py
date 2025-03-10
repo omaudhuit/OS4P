@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 import plotly.express as px
 
-st.set_page_config(page_title="OS4P Interactive Dashboard", layout="wide")
+st.set_page_config(page_title="OS4P Green Sentinel", layout="wide")
 
 def calculate_innovation_fund_score(cost_efficiency_ratio):
     """
