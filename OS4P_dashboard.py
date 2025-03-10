@@ -82,6 +82,9 @@ def sensitivity_analysis_co2(base_params, sensitivity_params):
                 #"co2_savings_lifetime": calculation["co2_savings_lifetime"],
                 #"monthly_debt_payment": calculation["monthly_debt_payment"],
                 #"monthly_fee_unit": calculation["monthly_fee_unit"]})
+                #"cost_efficiency_per_ton": cost_efficiency["cost_efficiency_per_ton"],
+                #"cost_efficiency_lifetime": cost_efficiency["cost_efficiency_lifetime"]
+                
                 
             cost_efficiency = calculate_cost_efficiency(total_grant, co2_savings_all_outposts, co2_savings_lifetime)
 
