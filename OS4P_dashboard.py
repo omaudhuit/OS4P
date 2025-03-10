@@ -537,7 +537,7 @@ Lack scalability, hindering expansion and modernization of surveillance and secu
 
 Consequently, there is an urgent need for integrated, autonomous, and sustainable energy solutions to support border security and enhance civil protection across the EU while aligning with stringent climate and environmental targets.
 
-Solution: Green Sentinel (OS4P)
+        Solution: Green Sentinel (OS4P)
 
 The Green Sentinel solution involves deploying autonomous Off-grid Smart Surveillance Security Sentinel Pylons (OS4P), integrating renewable energy generation, energy storage systems, drone-based surveillance, AI-driven monitoring, and secure telecommunications.
 
@@ -553,7 +553,7 @@ Energy Storage System:
 
 Equipped with a robust 30 kWh battery system, each sentinel ensures continuous power supply, resilience during periods of limited renewable generation, and effective load management.
 
-Drone-Based Autonomous Surveillance
+        Drone-Based Autonomous Surveillance
 
 Each OS4P unit integrates AI-driven drones to provide continuous, autonomous surveillance:
 
@@ -561,7 +561,7 @@ Drones: Two QuantumSystems Scorpion drones per pylon, consuming about 1.5 kWh pe
 
 AI-Powered Analytics: Real-time threat detection, surveillance analytics, and automated monitoring through integrated high-resolution cameras, radar, and edge computing capabilities.
 
-Technical Integration and Communication:
+        Technical Integration and Communication:
 
 Each OS4P unit integrates advanced telecommunications infrastructure:
 
@@ -569,7 +569,7 @@ Secure Communications: Utilizing 5G, Starlink satellite services, and secure LIN
 
 Structural Design: Robust tower structure suitable for harsh environments, ensuring resilience against extreme weather and operational disruptions.
 
-Environmental Impact
+        Environmental Impact
 
 The Green Sentinel project offers significant environmental and climate benefits:
 
@@ -577,7 +577,7 @@ CO₂ Emission Reductions: Each OS4P unit prevents between 18 to 30 metric tons 
 
 Additional CO₂ Savings: By replacing diesel-powered patrol vessels and vehicles, the cumulative 10-year CO₂ savings across a broader deployment (e.g., 200 units) could exceed 60 million kilograms.
 
-Operational and Socio-Economic Advantages
+        Operational and Socio-Economic Advantages
 
 Security Enhancement: Continuous, automated surveillance improves response time and situational awareness, significantly enhancing border and infrastructure security.
 
