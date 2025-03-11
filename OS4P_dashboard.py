@@ -396,6 +396,7 @@ def generate_pdf(results, params, lcoe_breakdown):
     pdf.cell(0, 10, f"CO₂ Savings per Outpost (tonnes/year): {results['co2_savings_per_outpost']:.1f}", ln=True)
     pdf.cell(0, 10, f"Total CO₂ Savings per Year (tonnes): {results['co2_savings_all_outposts']:.1f}", ln=True)
     pdf.cell(0, 10, f"Lifetime CO₂ Savings (tonnes): {results['co2_savings_lifetime']:.1f}", ln=True)
+    pdf.cell(0, 10, f"Cost Efficiency Ratio (€/tonne CO₂ avoided): {results['cost_efficiency_ratio']:.2f}", ln=True)
     
     pdf.ln(5)
     pdf.set_font("DejaVu", "B", 14)
