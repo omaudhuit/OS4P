@@ -556,7 +556,7 @@ def main():
         
         # Load and display the OS4P image
         os4p_image = Image.open("OS4P-The Island.png")
-        st.image(os4p_image, caption="OS4P Green Sentinel Installation Overview", use_column_width=True)
+        st.image(os4p_image, caption="OS4P Green Sentinel Installation Overview", use_container_width=True)
 
     
     with tab_overview:
