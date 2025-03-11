@@ -353,9 +353,11 @@ def generate_pdf(results, params, lcoe_breakdown):
     pdf.cell(0, 10, "Executive Summary", ln=True)
     pdf.set_font("DejaVu", "", 12)
     intro_text = (
-        "The Green Sentinel (OS4P) project in Greece aims to significantly reduce CO₂ emissions through the deployment of Offgrid Smart Surveillance Security Sentinel Pylons (OSPs) and the integration of drones for continuous surveillance.This report summarizes the evaluation of your OS4P system by combining both environmental "
-        "and financial metrics. It provides insights into CO₂ emissions, cost breakdowns, financing details, "
-        "and the Levelized Cost of Electricity (LCOE)."
+        "The Green Sentinel (OS4P) project in Greece aims to significantly reduce CO₂ emissions through the deployment of Offgrid Smart Surveillance Security Sentinel Pylons (OSPs) and the integration of drones for continuous surveillance."
+        "Renewable Energy Generation and CO₂ ReductionEach OSP unit is equipped with a 10 kWp solar photovoltaic system and a 3 kW wind turbine, collectively generating approximately 22,500 kWh of renewable energy annually. This clean energy replaces the need for diesel generators and powers autonomous drone systems that further reduce the dependency on traditional fuel consuming vessels for surveillance purposes."
+        "A full summary of the impact is detailed below"
+        "As mentioned, Drone Integration for Surveillance and Additional CO₂ Savings A critical component to the solution is the integration of AI-driven drones for 24/7 surveillance, offering a lower carbon footprint compared to more traditional surveillance vehicles (land, sea, air)."
+        "Conclusion: By combining renewable energy generation with drone-based surveillance, the Green Sentinel project not only enhances operational efficiency but also aligns with Greece's and the European Union's climate resilience and decarbonization targets, setting a benchmark for sustainable security solutions."
     )
     pdf.multi_cell(0, 10, intro_text)
     
