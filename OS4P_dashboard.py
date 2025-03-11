@@ -438,9 +438,9 @@ def main():
         maintenance_emissions = st.number_input("Maintenance Emissions (kg CO₂)", min_value=500, max_value=5000, value=1594, step=10, format="%d")
         
         st.subheader("OPEX Inputs (€ per Outpost per Year)")
-        maintenance_opex = st.number_input("Maintenance OPEX", min_value=1000, max_value=50000, value=15000, step=1000, format="%d")
-        communications_opex = st.number_input("Communications OPEX", min_value=1000, max_value=20000, value=6000, step=1000, format="%d")
-        security_opex = st.number_input("Security OPEX", min_value=1000, max_value=30000, value=9000, step=1000, format="%d")
+        maintenance_opex = st.number_input("Maintenance OPEX", min_value=500, max_value=5000, value=2000, step=1000, format="%d")
+        communications_opex = st.number_input("Communications OPEX", min_value=500, max_value=1500, value=1000, step=1000, format="%d")
+        security_opex = st.number_input("Security OPEX", min_value=0, max_value=1000, value=0, step=1000, format="%d")
         
         st.subheader("Energy Production")
         annual_energy_production = st.number_input(
