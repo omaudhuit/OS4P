@@ -331,16 +331,17 @@ def generate_pdf(results, params, lcoe_breakdown):
     Ensure that "DejaVuSans.ttf" is available in your project directory.
     """
     pdf = FPDF()
+    pdf.unifontsubset = False  # Disable font subsetting
     pdf.add_page()
-    # Add Unicode font; make sure DejaVuSans.ttf is in the same folder
     pdf.add_font("DejaVu", "", "dejavu-fonts-master/ttf/DejaVuSans.ttf", uni=True)
-    #pdf.set_font("DejaVu", "B", 16)
+    pdf.add_font("DejaVu", "B", "dejavu-fonts-master/ttf/DejaVuSans-Bold.ttf", uni=True)
+    pdf.set_font("DejaVu", "B", 16)
     pdf.cell(0, 10, "OS4P Interactive Dashboard Report", ln=True, align="C")
     
-    pdf.ln(10)
-    pdf.set_font("DejaVu", "B", 14)
-    pdf.cell(0, 10, "Introduction", ln=True)
-    pdf.set_font("DejaVu", "", 12)
+    #pdf.ln(10)
+    #pdf.set_font("DejaVu", "B", 14)
+    #pdf.cell(0, 10, "Introduction", ln=True)
+    #pdf.set_font("DejaVu", "", 12)
     intro_text = (
         "This report summarizes the evaluation of your OS4P system by combining both environmental "
         "and financial metrics. It provides insights into CO₂ emissions, cost breakdowns, financing details, "
