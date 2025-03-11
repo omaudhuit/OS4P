@@ -347,7 +347,10 @@ def generate_pdf(results, params, lcoe_breakdown):
 
     # Use bold font for the header
     pdf.set_font("DejaVu", "B", 16)
-    pdf.cell(0, 10, "“Green Sentinel” Deploying Off grid Smart Surveillance Security Sentinel Pylons (OS4P) Units for EU Climate Resilience and Secure Borders", ln=True, align="C")
+    pdf.cell(0, 10, 
+        "“Green Sentinel” Deploying Off grid Smart"
+          "Surveillance Security Sentinel Pylons"
+          "(OS4P) Units for EU Climate Resilience and Secure Borders", ln=True, align="C")
     pdf.ln(10)
     pdf.set_font("DejaVu", "B", 14)
     pdf.cell(0, 10, "Executive Summary", ln=True)
