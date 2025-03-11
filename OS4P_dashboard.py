@@ -415,7 +415,7 @@ def main():
     with st.sidebar:
         st.header("User Inputs")
         st.subheader("System Configuration")
-        num_outposts = st.number_input("Number of Outposts", min_value=1, max_value=1000, value=10, step=1, format="%d")
+        num_outposts = st.number_input("Number of Outposts", min_value=1, max_value=1000, value=150, step=1, format="%d")
         
         st.subheader("Fuel Consumption (Liters per Hour)")
         large_patrol_fuel = st.number_input("Large Patrol Boat Fuel", min_value=50, max_value=300, value=150, step=10, format="%d")
@@ -449,7 +449,7 @@ def main():
             "Annual Energy Production per Outpost (kWh/year)", 
             min_value=1000, 
             max_value=100000, 
-            value=15000, 
+            value=20000, 
             step=1000, 
             format="%d"
         )
@@ -475,7 +475,7 @@ def main():
             st.markdown(f"**Total Drones CAPEX: €{drones_capex:,}**")
             
             st.markdown("#### Other CAPEX")
-            bos_capex = st.number_input("Additional BOS CAPEX", min_value=0, max_value=100000, value=40000, step=5000, format="%d")
+            bos_capex = st.number_input("Additional BOS/CONTIGENCY/OTHER CAPEX", min_value=0, max_value=100000, value=0, step=5000, format="%d")
             total_capex_per_outpost = microgrid_capex + drones_capex + bos_capex
             st.markdown(f"**Total CAPEX per Outpost: €{total_capex_per_outpost:,}**")
         else:
