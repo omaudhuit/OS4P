@@ -54,11 +54,8 @@ def calculate_os4p(params):
     detailed_capex = params.get("detailed_capex", None)
 
     # Updated CO₂ Savings Calculation (Including GENSET and M/S 240 GD vehicles)
-    # Calculate GENSET fuel consumption using user inputs:
     genset_fuel_per_day = params["genset_fuel_per_hour"] * params["genset_operating_hours"]
-    # Calculate additional fuel consumption for M/S 240 GD Patrol Vehicles (operating for the same patrol hours)
     ms240_gd_fuel_per_day = params["num_ms240_gd_vehicles"] * params["ms240_gd_fuel_consumption"] * hours_per_day_base
-    # Daily fuel consumption now includes patrol boats, GENSET, and M/S 240 GD vehicles:
     daily_fuel_consumption = ((large_patrol_fuel + rib_fuel + small_patrol_fuel) * hours_per_day_base) + genset_fuel_per_day + ms240_gd_fuel_per_day
     annual_fuel_consumption = daily_fuel_consumption * operating_days_per_year
     manned_co2_emissions = annual_fuel_consumption * co2_factor
@@ -428,7 +425,7 @@ def main():
         genset_fuel_per_hour = st.number_input("GENSET Fuel Consumption per Hour (L/h)", min_value=0.1, max_value=10.0, value=2.5, step=0.1, format="%.1f")
         genset_operating_hours = st.number_input("GENSET Operating Hours per Day", min_value=1, max_value=24, value=24, step=1, format="%d")
         num_ms240_gd_vehicles = st.number_input("Number of M/S 240 GD Patrol Vehicles", min_value=0, max_value=100, value=1, step=1, format="%d")
-        ms240_gd_fuel_consumption = st.number_input("M/S 240 GD Patrol Vehicle Fuel Consumption (L/h)", min_value=1, max_value=20, value=7, step=10, format="%d")
+        ms240_gd_fuel_consumption = st.number_input("M/S 240 GD Patrol Vehicle Fuel Consumption (L/h)", min_value=50, max_value=300, value=150, step=10, format="%d")
         
         st.subheader("Financial Parameters")
         interest_rate = st.number_input("Interest Rate (%)", min_value=1.0, max_value=15.0, value=5.0, step=0.1, format="%.1f")
@@ -544,11 +541,8 @@ def main():
 The European Union faces increasing pressures from climate change and escalating geopolitical challenges, particularly around border security and critical infrastructure resilience. Traditional surveillance methods and power solutions for remote outposts and border checkpoints predominantly rely on diesel generators and manned patrol operations, including diesel-powered vehicles and vessels. These conventional approaches:
 
  - Contribute significantly to greenhouse gas emissions, exacerbating climate change impacts.
-
  - Suffer from logistical vulnerabilities, such as fuel supply disruptions in conflict-prone or extreme weather-affected regions.
-
  - Offer limited resilience, leading to infrastructural vulnerabilities during extreme weather or crises.
-
  - Lack scalability, hindering expansion and modernization of surveillance and secure communication capabilities.
 
 Consequently, there is an urgent need for integrated, autonomous, and sustainable energy solutions to support border security and enhance civil protection across the EU while aligning with stringent climate and environmental targets.
@@ -556,51 +550,6 @@ Consequently, there is an urgent need for integrated, autonomous, and sustainabl
         Solution: Green Sentinel (OS4P)
 
 The Green Sentinel solution involves deploying autonomous Off-grid Smart Surveillance Security Sentinel Pylons (OS4P), integrating renewable energy generation, energy storage systems, drone-based surveillance, AI-driven monitoring, and secure telecommunications.
-
-Key Components:
-
-Renewable Energy Generation: Each OS4P pylon incorporates a hybrid renewable energy generation system comprising:
-
- - Solar PV System: A 10 kWp solar photovoltaic installation capable of producing approximately 15,000 kWh annually.
-
- - Wind Turbine: A complementary 3 kW wind turbine that generates approximately 7,500 kWh per year, bringing total renewable generation per pylon to approximately 22,500 kWh annually.
-
- - Energy Storage System: Equipped with a robust 30 kWh battery system, each sentinel ensures continuous power supply, resilience during periods of limited renewable generation, and effective load management.
-
-        Drone-Based Autonomous Surveillance
-
-Each OS4P unit integrates AI-driven drones to provide continuous, autonomous surveillance:
-
-Drones: Two QuantumSystems Scorpion drones per pylon, consuming about 1.5 kWh per patrol cycle (totaling ~144 kWh/day for continuous operation).
-
-AI-Powered Analytics: Real-time threat detection, surveillance analytics, and automated monitoring through integrated high-resolution cameras, radar, and edge computing capabilities.
-
-        Technical Integration and Communication:
-
-Each OS4P unit integrates advanced telecommunications infrastructure:
-
- - Secure Communications: Utilizing 5G, Starlink satellite services, and secure LINK-16 communications, ensuring robust real-time data transfer and connectivity.
-
- - Structural Design: Robust tower structure suitable for harsh environments, ensuring resilience against extreme weather and operational disruptions.
-
-        Environmental Impact
-
-The Green Sentinel project offers significant environmental and climate benefits:
-
- - CO₂ Emission Reductions: Each OS4P unit prevents between 18 to 30 metric tons of CO₂ emissions annually by replacing diesel-generated power. Over 10 years, the total CO₂ avoided by 45 units is projected between 8,100 to 13,500 metric tons.
-
- - Additional CO₂ Savings: By replacing diesel-powered patrol vessels and vehicles, the cumulative 10-year CO₂ savings across a broader deployment (e.g., 200 units) could exceed 60 million kilograms.
-
-        Operational and Socio-Economic Advantages
-
- - Security Enhancement: Continuous, automated surveillance improves response time and situational awareness, significantly enhancing border and infrastructure security.
-
- - Job Creation: Local jobs in installation, operation, and ongoing maintenance.
-
- - Innovation Leadership: Demonstrates a scalable, sustainable, and replicable model aligning with the EU’s Green Deal and security frameworks.
-
-In summary, Green Sentinel (OS4P) addresses critical EU security and climate resilience challenges by integrating renewable energy and autonomous surveillance, setting a new standard for sustainable, resilient, and efficient border security and critical infrastructure protection.
-
         """)
     
     with tab_overview:
@@ -658,6 +607,20 @@ In summary, Green Sentinel (OS4P) addresses critical EU security and climate res
             score_lifetime_color = "green" if results['innovation_fund_score_lifetime'] >= 9 else ("orange" if results['innovation_fund_score_lifetime'] >= 6 else "red")
             st.markdown(f"<h3 style='color: {score_lifetime_color}'>Lifetime Score: {results['innovation_fund_score_lifetime']}/12</h3>", unsafe_allow_html=True)
             st.progress((results['innovation_fund_score_lifetime'] / 12))
+        
+        # --- New Section: Coverage Calculation and Map of Greece ---
+        st.subheader("Coverage Calculation")
+        area_to_cover = st.number_input("Enter total area to cover (km²)", value=100, min_value=1, step=1)
+        coverage_per_unit = st.number_input("Enter coverage area per OS4P unit (km²)", value=10, min_value=1, step=1)
+        required_units = int(np.ceil(area_to_cover / coverage_per_unit))
+        st.markdown(f"**Required OS4P Units to cover {area_to_cover} km²: {required_units}**")
+        
+        st.subheader("Map of Greece")
+        greece_coords = pd.DataFrame({
+            'lat': [39.0742],
+            'lon': [21.8243]
+        })
+        st.map(greece_coords)
     
     with tab_financial:
         st.subheader("Financing Details")
