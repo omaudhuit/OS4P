@@ -535,21 +535,21 @@ def main():
         st.header("Introduction")
         st.markdown("""
         ****OS4P Green Sentinel****
-
+        
         Problem Statement
-
-The European Union faces increasing pressures from climate change and escalating geopolitical challenges, particularly around border security and critical infrastructure resilience. Traditional surveillance methods and power solutions for remote outposts and border checkpoints predominantly rely on diesel generators and manned patrol operations, including diesel-powered vehicles and vessels. These conventional approaches:
-
- - Contribute significantly to greenhouse gas emissions, exacerbating climate change impacts.
- - Suffer from logistical vulnerabilities, such as fuel supply disruptions in conflict-prone or extreme weather-affected regions.
- - Offer limited resilience, leading to infrastructural vulnerabilities during extreme weather or crises.
- - Lack scalability, hindering expansion and modernization of surveillance and secure communication capabilities.
-
-Consequently, there is an urgent need for integrated, autonomous, and sustainable energy solutions to support border security and enhance civil protection across the EU while aligning with stringent climate and environmental targets.
-
+        
+        The European Union faces increasing pressures from climate change and escalating geopolitical challenges, particularly around border security and critical infrastructure resilience. Traditional surveillance methods and power solutions for remote outposts and border checkpoints predominantly rely on diesel generators and manned patrol operations, including diesel-powered vehicles and vessels. These conventional approaches:
+        
+         - Contribute significantly to greenhouse gas emissions, exacerbating climate change impacts.
+         - Suffer from logistical vulnerabilities, such as fuel supply disruptions in conflict-prone or extreme weather-affected regions.
+         - Offer limited resilience, leading to infrastructural vulnerabilities during extreme weather or crises.
+         - Lack scalability, hindering expansion and modernization of surveillance and secure communication capabilities.
+        
+        Consequently, there is an urgent need for integrated, autonomous, and sustainable energy solutions to support border security and enhance civil protection across the EU while aligning with stringent climate and environmental targets.
+        
         Solution: Green Sentinel (OS4P)
-
-The Green Sentinel solution involves deploying autonomous Off-grid Smart Surveillance Security Sentinel Pylons (OS4P), integrating renewable energy generation, energy storage systems, drone-based surveillance, AI-driven monitoring, and secure telecommunications.
+        
+        The Green Sentinel solution involves deploying autonomous Off-grid Smart Surveillance Security Sentinel Pylons (OS4P), integrating renewable energy generation, energy storage systems, drone-based surveillance, AI-driven monitoring, and secure telecommunications.
         """)
     
     with tab_overview:
@@ -608,19 +608,18 @@ The Green Sentinel solution involves deploying autonomous Off-grid Smart Surveil
             st.markdown(f"<h3 style='color: {score_lifetime_color}'>Lifetime Score: {results['innovation_fund_score_lifetime']}/12</h3>", unsafe_allow_html=True)
             st.progress((results['innovation_fund_score_lifetime'] / 12))
         
-        # --- New Section: Coverage Calculation and Map of Greece ---
+        # --- New Section: Coverage Calculation ---
         st.subheader("Coverage Calculation")
-        area_to_cover = st.number_input("Enter total area to cover (km²)", value=100, min_value=1, step=1)
+        st.markdown("The following inputs define the areas that need to be covered. The **coverage area per OS4P unit** is based on the specifications of the Drone system used.")
+        land_borders = st.number_input("Enter area for Land Borders (km²)", value=20, min_value=0, step=1)
+        territorial_waters = st.number_input("Enter area for Territorial Waters (km²)", value=30, min_value=0, step=1)
+        forest_area = st.number_input("Enter area for Forest Area (km²)", value=50, min_value=0, step=1)
+        total_area = land_borders + territorial_waters + forest_area
         coverage_per_unit = st.number_input("Enter coverage area per OS4P unit (km²)", value=10, min_value=1, step=1)
-        required_units = int(np.ceil(area_to_cover / coverage_per_unit))
-        st.markdown(f"**Required OS4P Units to cover {area_to_cover} km²: {required_units}**")
-        
-        st.subheader("Map of Greece")
-        greece_coords = pd.DataFrame({
-            'lat': [39.0742],
-            'lon': [21.8243]
-        })
-        st.map(greece_coords)
+        required_units = int(np.ceil(total_area / coverage_per_unit))
+        st.markdown(f"**Total area to cover: {total_area} km²**")
+        st.markdown(f"**Coverage area per OS4P unit (based on the Drone system specifications): {coverage_per_unit} km²**")
+        st.markdown(f"**Required OS4P Units: {required_units}**")
     
     with tab_financial:
         st.subheader("Financing Details")
