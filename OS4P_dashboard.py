@@ -353,7 +353,7 @@ def generate_pdf(results, params, lcoe_breakdown):
     pdf.cell(0, 10, "Executive Summary", ln=True)
     pdf.set_font("DejaVu", "", 12)
     intro_text = (
-        "This report summarizes the evaluation of your OS4P system by combining both environmental "
+        "The Green Sentinel (OS4P) project in Greece aims to significantly reduce CO₂ emissions through the deployment of Offgrid Smart Surveillance Security Sentinel Pylons (OSPs) and the integration of drones for continuous surveillance.This report summarizes the evaluation of your OS4P system by combining both environmental "
         "and financial metrics. It provides insights into CO₂ emissions, cost breakdowns, financing details, "
         "and the Levelized Cost of Electricity (LCOE)."
     )
