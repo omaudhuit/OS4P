@@ -334,7 +334,7 @@ def generate_pdf(results, params, lcoe_breakdown):
     pdf.unifontsubset = False  # Disable font subsetting
     pdf.add_page()
     pdf.add_font("DejaVu", "", "dejavu-fonts-master/ttf/DejaVuSans.ttf", uni=True)
-    pdf.add_font("DejaVu", "B", "dejavu-fonts-master/ttf/DejaVuSans-Bold.ttf", uni=True)
+    #pdf.add_font("DejaVu", "B", "dejavu-fonts-master/ttf/DejaVuSans-Bold.ttf", uni=True)
     pdf.set_font("DejaVu", "B", 16)
     pdf.cell(0, 10, "OS4P Interactive Dashboard Report", ln=True, align="C")
     
