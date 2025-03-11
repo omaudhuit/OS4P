@@ -347,7 +347,18 @@ def generate_pdf(results, params, lcoe_breakdown):
 
     # Use bold font for the header
     pdf.set_font("DejaVu", "B", 16)
-    pdf.cell(0, 10, "OS4P Green Sentinel", ln=True, align="C")
+    pdf.cell(0, 10, "“Green Sentinel” Deploying Off grid Smart Surveillance Security Sentinel Pylons (OS4P) Units for EU Climate Resilience and Secure Borders", ln=True, align="C")
+    
+        pdf.ln(10)
+    pdf.set_font("DejaVu", "B", 14)
+    pdf.cell(0, 10, "Executive Summary", ln=True)
+    pdf.set_font("DejaVu", "", 12)
+    intro_text = (
+        "This report summarizes the evaluation of your OS4P system by combining both environmental "
+        "and financial metrics. It provides insights into CO₂ emissions, cost breakdowns, financing details, "
+        "and the Levelized Cost of Electricity (LCOE)."
+    )
+    pdf.multi_cell(0, 10, intro_text)
     
     pdf.ln(10)
     pdf.set_font("DejaVu", "B", 14)
