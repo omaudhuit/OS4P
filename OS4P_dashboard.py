@@ -334,7 +334,7 @@ def generate_pdf(results, params, lcoe_breakdown):
     pdf.add_page()
     # Add Unicode font; make sure DejaVuSans.ttf is in the same folder
     pdf.add_font("DejaVu", "", "dejavu-fonts-master/ttf/DejaVuSans.ttf", uni=True)
-    pdf.set_font("DejaVu", "B", 16)
+    #pdf.set_font("DejaVu", "B", 16)
     pdf.cell(0, 10, "OS4P Interactive Dashboard Report", ln=True, align="C")
     
     pdf.ln(10)
