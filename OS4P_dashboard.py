@@ -615,7 +615,7 @@ def main():
         territorial_waters = st.number_input("Enter area for Territorial Waters (km²)", value=40000, min_value=0, step=1)
         forest_area = st.number_input("Enter area for Forest Area (km²)", value=2000, min_value=0, step=1)
         total_area = land_borders + territorial_waters + forest_area
-        coverage_per_unit = st.number_input("Enter coverage area per OS4P unit (km²)", value=10, min_value=1, step=1)
+        coverage_per_unit = st.number_input("Enter coverage area per OS4P unit (km²)", value=30, min_value=1, step=1)
         required_units = int(np.ceil(total_area / coverage_per_unit))
         st.markdown(f"**Total area to cover: {total_area} km²**")
         st.markdown(f"**Coverage area per OS4P unit (based on the Drone system specifications): {coverage_per_unit} km²**")
