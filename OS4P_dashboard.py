@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 import plotly.express as px
 from fpdf import FPDF  # pip install fpdf2
+from PIL import Image  # Added for image handling
+
 
 st.set_page_config(page_title="OS4P Green Sentinel", layout="wide")
 
@@ -551,6 +553,11 @@ def main():
         
         The Green Sentinel solution involves deploying autonomous Off-grid Smart Surveillance Security Sentinel Pylons (OS4P), integrating renewable energy generation, energy storage systems, drone-based surveillance, AI-driven monitoring, and secure telecommunications.
         """)
+        
+        # Load and display the OS4P image
+        os4p_image = Image.open("OS4P-The Island 1 (1).png")
+        st.image(os4p_image, caption="OS4P Green Sentinel Installation Overview", use_column_width=True)
+
     
     with tab_overview:
         st.subheader("Environmental Impact")
