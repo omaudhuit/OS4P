@@ -366,6 +366,23 @@ def generate_pdf(results, params, lcoe_breakdown):
     pdf.cell(0, 10, "Introduction", ln=True)
     pdf.set_font("DejaVu", "", 12)
     intro_text = (
+        "A New Age of Challenges:"
+        "The European Union (EU) is facing a rapidly changing geopolitical landscape coupled with an escalating climate crisis. On one hand, extreme weather events—intensified by global warming—are undermining conventional power grids, leading to blackouts and infrastructural vulnerabilities. On another, border security challenges persist, requiring advanced AI powered surveillance as well as reliable power for remote monitoring systems. As the EU seeks to enhance its civil security infrastructure and reduce reliance on fossil fuels, there is a pressing need for integrated, resilient, and sustainable solutions."
+        "Why Off-Site Power (OSP) Units Matter"
+        "Remote border checkpoints, critical infrastructure sites, and off-grid operations often rely on diesel generators or limited grid connections. These traditional setups:"
+        "•	Contribute to higher greenhouse gas emissions, exacerbating climate change."
+        "•	Lack resilience, especially in extreme weather conditions or in conflict-prone areas where fuel supply chains may be disrupted."
+        "•	Offer limited scalability, hindering the expansion of surveillance and communication networks necessary for robust EU border security."
+        "Off-Site Power (OSP) units emerge as a holistic answer. By combining solar photovoltaic (PV) modules, wind turbines, and advanced telecommunications, these units are:"
+        "•	Cleaner and more efficient, significantly reducing carbon footprints."
+        "•	Highly resilient, providing uninterrupted power even in crisis scenarios."
+        "•	Easily deployable, adapting to different terrains and climate conditions for EU external border monitoring or civil security outposts."
+        "Project Scope:"
+        "Under the Innovation Fund Pilot Project category, we propose the deployment of 45 OSP units—each a self-contained hub of renewable energy production, energy storage, drone-enabled surveillance, and secure telecommunications. Our overarching goals are to:"
+        "1.	Demonstrate the feasibility of integrating solar, wind, and energy storage systems with drone surveillance in demanding, off-grid locations."
+        "2.	Support EU security objectives by providing reliable power and communications for border enforcement and civil protection agencies."
+        "3.	Act as a frontline example of how cutting-edge technology can help mitigate climate impacts while strengthening EU-wide security and defense frameworks."
+        
         "This report summarizes the evaluation of your OS4P system by combining both environmental "
         "and financial metrics. It provides insights into CO₂ emissions, cost breakdowns, financing details, "
         "and the Levelized Cost of Electricity (LCOE)."
