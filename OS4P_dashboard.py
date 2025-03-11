@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 import plotly.express as px
-from fpdf import FPDF  # make sure to install fpdf2 via pip install fpdf2
+from fpdf import FPDF  # install via: pip install fpdf2
 
 st.set_page_config(page_title="OS4P Interactive Dashboard", layout="wide")
 
@@ -281,6 +281,7 @@ def create_innovation_fund_score_chart(sensitivity_data, param_name):
 
 def create_emissions_sensitivity_chart(sensitivity_data, param_name):
     fig = go.Figure()
+    
     fig.add_trace(go.Scatter(
         x=sensitivity_data['Parameter_Value'],
         y=sensitivity_data['Manned_CO2_Emissions'],
@@ -288,6 +289,7 @@ def create_emissions_sensitivity_chart(sensitivity_data, param_name):
         name='Manned Emissions',
         line=dict(color='#ff9999', width=2)
     ))
+    
     fig.add_trace(go.Scatter(
         x=sensitivity_data['Parameter_Value'],
         y=sensitivity_data['Autonomous_CO2_Emissions'],
@@ -295,6 +297,7 @@ def create_emissions_sensitivity_chart(sensitivity_data, param_name):
         name='Autonomous Emissions',
         line=dict(color='#66b3ff', width=2)
     ))
+    
     fig.add_trace(go.Scatter(
         x=sensitivity_data['Parameter_Value'],
         y=sensitivity_data['Manned_CO2_Emissions'],
@@ -304,6 +307,7 @@ def create_emissions_sensitivity_chart(sensitivity_data, param_name):
         fillcolor='rgba(0, 255, 0, 0.2)',
         line=dict(width=0)
     ))
+    
     fig.update_layout(
         title=f'CO2 Emissions Sensitivity to {param_name}',
         xaxis_title=param_name,
@@ -317,21 +321,26 @@ def create_emissions_sensitivity_chart(sensitivity_data, param_name):
             x=1
         )
     )
+    
     return fig
 
 def generate_pdf(results, params, lcoe_breakdown):
     """
     Generate a PDF report that aggregates key dashboard information.
+    Uses a Unicode TrueType font (DejaVu Sans) to support non-Latin1 characters.
+    Ensure that "DejaVuSans.ttf" is available in your project directory.
     """
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", "B", 16)
+    # Add Unicode font; make sure DejaVuSans.ttf is in the same folder
+    pdf.add_font("DejaVu", "", "DejaVuSans.ttf", uni=True)
+    pdf.set_font("DejaVu", "B", 16)
     pdf.cell(0, 10, "OS4P Interactive Dashboard Report", ln=True, align="C")
     
     pdf.ln(10)
-    pdf.set_font("Arial", "B", 14)
+    pdf.set_font("DejaVu", "B", 14)
     pdf.cell(0, 10, "Introduction", ln=True)
-    pdf.set_font("Arial", "", 12)
+    pdf.set_font("DejaVu", "", 12)
     intro_text = (
         "This report summarizes the evaluation of your OS4P system by combining both environmental "
         "and financial metrics. It provides insights into CO₂ emissions, cost breakdowns, financing details, "
@@ -340,17 +349,17 @@ def generate_pdf(results, params, lcoe_breakdown):
     pdf.multi_cell(0, 10, intro_text)
     
     pdf.ln(5)
-    pdf.set_font("Arial", "B", 14)
+    pdf.set_font("DejaVu", "B", 14)
     pdf.cell(0, 10, "Overview Metrics", ln=True)
-    pdf.set_font("Arial", "", 12)
+    pdf.set_font("DejaVu", "", 12)
     pdf.cell(0, 10, f"CO₂ Savings per Outpost (tonnes/year): {results['co2_savings_per_outpost']:.1f}", ln=True)
     pdf.cell(0, 10, f"Total CO₂ Savings per Year (tonnes): {results['co2_savings_all_outposts']:.1f}", ln=True)
     pdf.cell(0, 10, f"Lifetime CO₂ Savings (tonnes): {results['co2_savings_lifetime']:.1f}", ln=True)
     
     pdf.ln(5)
-    pdf.set_font("Arial", "B", 14)
+    pdf.set_font("DejaVu", "B", 14)
     pdf.cell(0, 10, "Cost Metrics", ln=True)
-    pdf.set_font("Arial", "", 12)
+    pdf.set_font("DejaVu", "", 12)
     pdf.cell(0, 10, f"Total CAPEX (€): {results['total_capex']:,.0f}", ln=True)
     pdf.cell(0, 10, f"CAPEX per Outpost (€): {results['total_capex_per_outpost']:,.0f}", ln=True)
     pdf.cell(0, 10, f"Annual OPEX (€/year): {results['annual_opex']:,.0f}", ln=True)
@@ -359,27 +368,27 @@ def generate_pdf(results, params, lcoe_breakdown):
     pdf.cell(0, 10, f"TCO per Outpost (€): {results['tco_per_outpost']:,.0f}", ln=True)
     
     pdf.ln(5)
-    pdf.set_font("Arial", "B", 14)
+    pdf.set_font("DejaVu", "B", 14)
     pdf.cell(0, 10, "Financial Details", ln=True)
-    pdf.set_font("Arial", "", 12)
+    pdf.set_font("DejaVu", "", 12)
     pdf.cell(0, 10, f"Total Pilot Cost with Markup (€): {results['pilot_markup']:,.0f}", ln=True)
     pdf.cell(0, 10, f"Grant Coverage (€): {results['total_grant']:,.0f}", ln=True)
     pdf.cell(0, 10, f"Debt Financing Required (€): {results['debt']:,.0f}", ln=True)
     
     pdf.ln(5)
-    pdf.set_font("Arial", "B", 14)
+    pdf.set_font("DejaVu", "B", 14)
     pdf.cell(0, 10, "LCOE Calculation", ln=True)
-    pdf.set_font("Arial", "", 12)
+    pdf.set_font("DejaVu", "", 12)
     pdf.cell(0, 10, f"LCOE (€/kWh): {results['lcoe']:.4f}", ln=True)
     
     pdf.ln(5)
-    pdf.set_font("Arial", "B", 12)
+    pdf.set_font("DejaVu", "B", 12)
     pdf.cell(0, 10, "Calculation Breakdown:", ln=True)
-    pdf.set_font("Arial", "", 12)
+    pdf.set_font("DejaVu", "", 12)
     for index, row in lcoe_breakdown.iterrows():
         pdf.cell(0, 10, f"{row['Metric']}: {row['Value']:.2f}", ln=True)
     
-    # Use errors="replace" to handle unsupported characters
+    # Now output the PDF as bytes; no further encoding needed.
     pdf_bytes = pdf.output(dest="S").encode("latin1", errors="replace")
     return pdf_bytes
 
