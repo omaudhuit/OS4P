@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 import plotly.express as px
-from fpdf import FPDF  # make sure to install fpdf2
+from fpdf import FPDF  # make sure to install fpdf2 via pip install fpdf2
 
 st.set_page_config(page_title="OS4P Interactive Dashboard", layout="wide")
 
@@ -20,7 +20,6 @@ def calculate_innovation_fund_score(cost_efficiency_ratio):
     """
     if cost_efficiency_ratio <= 2000:
         score = 12 - (12 * (cost_efficiency_ratio / 2000))
-        # Round to nearest half point
         score = round(score * 2) / 2
         return max(0, score)
     else:
@@ -54,10 +53,9 @@ def calculate_os4p(params):
     # Optional detailed CAPEX components
     detailed_capex = params.get("detailed_capex", None)
 
-    # ✅ CO₂ Savings Calculation (Including GENSET)
+    # CO₂ Savings Calculation (Including GENSET)
     genset_fuel_per_hour = 2.5  # Liters per hour (GENSET)
-    genset_fuel_per_day = genset_fuel_per_hour * 24  # 24-hour consumption
-
+    genset_fuel_per_day = genset_fuel_per_hour * 24
     daily_fuel_consumption = ((large_patrol_fuel + rib_fuel + small_patrol_fuel) * hours_per_day_base) + genset_fuel_per_day
     annual_fuel_consumption = daily_fuel_consumption * operating_days_per_year
     manned_co2_emissions = annual_fuel_consumption * co2_factor
@@ -67,34 +65,28 @@ def calculate_os4p(params):
     co2_savings_lifetime = co2_savings_all_outposts * loan_years
 
     # Financial Calculations
-    # Total CAPEX calculation
     total_capex_per_outpost = microgrid_capex + drones_capex + bos_capex
     total_capex = total_capex_per_outpost * num_outposts
-    
-    # Total annual OPEX calculation
     annual_opex_per_outpost = maintenance_opex + communications_opex + security_opex
     annual_opex = annual_opex_per_outpost * num_outposts
     lifetime_opex = annual_opex * loan_years
     
-    # Initial project cost calculation
     pilot_markup = total_capex * 1.25
     grant_coverage = 0.60
     total_grant = grant_coverage * pilot_markup
     debt = pilot_markup - total_grant
 
-    # Loan Calculation for CAPEX
     monthly_interest_rate = interest_rate / 100 / 12
     num_months = loan_years * 12
     monthly_debt_payment = (debt * monthly_interest_rate) / (1 - (1 + monthly_interest_rate) ** -num_months)
     lifetime_debt_payment = monthly_debt_payment * num_months
 
-    # SLA Premium
     sla_multiplier = 1 + sla_premium / 100
     monthly_fee_unit = ((monthly_debt_payment / num_outposts) + (annual_opex_per_outpost / 12)) * sla_multiplier
     annual_fee_unit = monthly_fee_unit * 12
     lifetime_fee_total = annual_fee_unit * num_outposts * loan_years
 
-    # ✅ Cost Efficiency Calculation
+    # Cost Efficiency Calculation
     cost_efficiency_per_ton = total_grant / co2_savings_all_outposts if co2_savings_all_outposts > 0 else float('inf')
     cost_efficiency_lifetime = total_grant / co2_savings_lifetime if co2_savings_lifetime > 0 else float('inf')
     
@@ -102,7 +94,6 @@ def calculate_os4p(params):
     innovation_fund_score = calculate_innovation_fund_score(cost_efficiency_per_ton)
     innovation_fund_score_lifetime = calculate_innovation_fund_score(cost_efficiency_lifetime)
     
-    # Total Cost of Ownership (TCO)
     tco = total_capex + lifetime_opex
     tco_per_outpost = tco / num_outposts
 
@@ -114,17 +105,16 @@ def calculate_os4p(params):
     else:
         CRF = 0
     annualized_capex = total_capex_per_outpost * CRF
-    annual_energy = params["annual_energy_production"]  # in kWh/year per outpost
+    annual_energy = params["annual_energy_production"]
     lcoe = (annualized_capex + annual_opex_per_outpost) / annual_energy
 
-    # Prepare standard CAPEX breakdown
+    # Prepare CAPEX breakdowns
     capex_breakdown = {
         "Microgrid": microgrid_capex * num_outposts,
         "Drones": drones_capex * num_outposts,
         "BOS (Balance of System)": bos_capex * num_outposts
     }
     
-    # Prepare detailed CAPEX breakdown if available
     detailed_capex_breakdown = None
     if detailed_capex:
         detailed_capex_breakdown = {}
@@ -132,15 +122,12 @@ def calculate_os4p(params):
             detailed_capex_breakdown[category] = value * num_outposts
 
     result = {
-        # CO2 Metrics
         "co2_savings_per_outpost": co2_savings_per_outpost,
         "co2_savings_all_outposts": co2_savings_all_outposts,
         "co2_savings_lifetime": co2_savings_lifetime,
         "daily_fuel_consumption": daily_fuel_consumption,
         "manned_co2_emissions": manned_co2_emissions,
         "autonomous_co2_emissions": autonomous_co2_emissions,
-        
-        # Financial Metrics
         "total_capex": total_capex,
         "total_capex_per_outpost": total_capex_per_outpost,
         "annual_opex": annual_opex,
@@ -152,23 +139,15 @@ def calculate_os4p(params):
         "monthly_fee_unit": monthly_fee_unit,
         "annual_fee_unit": annual_fee_unit,
         "lifetime_fee_total": lifetime_fee_total,
-        
-        # Efficiency Metrics
         "cost_efficiency_per_ton": cost_efficiency_per_ton,
         "cost_efficiency_lifetime": cost_efficiency_lifetime,
         "innovation_fund_score": innovation_fund_score,
         "innovation_fund_score_lifetime": innovation_fund_score_lifetime,
-        
-        # Project Financing 
         "pilot_markup": pilot_markup,
         "total_grant": total_grant,
         "debt": debt,
         "lifetime_debt_payment": lifetime_debt_payment,
-        
-        # LCOE Metric
         "lcoe": lcoe,
-        
-        # Breakdowns for visualizations
         "capex_breakdown": capex_breakdown,
         "opex_breakdown": {
             "Maintenance": maintenance_opex * num_outposts,
@@ -181,7 +160,6 @@ def calculate_os4p(params):
         }
     }
     
-    # Add detailed CAPEX breakdown if available
     if detailed_capex_breakdown:
         result["detailed_capex_breakdown"] = detailed_capex_breakdown
     
@@ -189,55 +167,38 @@ def calculate_os4p(params):
 
 def create_cost_breakdown_chart(capex_data, opex_data, detailed_capex=None):
     if detailed_capex is not None:
-        # Create detailed CAPEX breakdown
         capex_detailed_df = pd.DataFrame(list(detailed_capex.items()), columns=['Category', 'Value'])
         capex_detailed_df['Type'] = 'CAPEX (Detailed)'
-        
-        # Create OPEX breakdown
         opex_df = pd.DataFrame(list(opex_data.items()), columns=['Category', 'Value'])
         opex_df['Type'] = 'OPEX (Annual)'
-        
-        # Combine dataframes
         combined_df = pd.concat([capex_detailed_df, opex_df])
     else:
-        # Use simple CAPEX breakdown
         capex_df = pd.DataFrame(list(capex_data.items()), columns=['Category', 'Value'])
         capex_df['Type'] = 'CAPEX'
-        
-        # Create OPEX breakdown
         opex_df = pd.DataFrame(list(opex_data.items()), columns=['Category', 'Value'])
         opex_df['Type'] = 'OPEX (Annual)'
-        
-        # Combine dataframes
         combined_df = pd.concat([capex_df, opex_df])
     
     fig = px.bar(combined_df, x='Category', y='Value', color='Type', 
                  title='Cost Breakdown', 
                  labels={'Value': 'Cost (€)', 'Category': ''})
-    
     fig.update_layout(barmode='group')
-    
     return fig
 
 def create_co2_comparison_chart(co2_data):
     labels = list(co2_data.keys())
     values = list(co2_data.values())
-    
     fig = go.Figure(data=[go.Bar(
         x=labels,
         y=values,
         marker_color=['#ff9999', '#66b3ff']
     )])
-    
     fig.update_layout(
         title_text='CO₂ Emissions Comparison (tonnes/year)',
         yaxis_title='CO₂ (tonnes)',
     )
-    
-    # Calculate and display the savings as text on the chart
     savings = values[0] - values[1]
     savings_percentage = (savings / values[0]) * 100 if values[0] > 0 else 0
-    
     fig.add_annotation(
         x=0.5,
         y=max(values) * 1.1,
@@ -245,39 +206,26 @@ def create_co2_comparison_chart(co2_data):
         showarrow=False,
         font=dict(size=14)
     )
-    
     return fig
 
 def perform_sensitivity_analysis(base_params, sensitivity_param, range_values):
-    """
-    Perform sensitivity analysis by varying one parameter and keeping others constant
-    """
     results = []
-    
     for value in range_values:
-        # Create a copy of the base parameters
         params = base_params.copy()
-        # Update the parameter to analyze
         params[sensitivity_param] = value
-        # Calculate results with the new parameter value
         result = calculate_os4p(params)
-        # Store the parameter value and corresponding CO2 savings
         results.append({
             'Parameter_Value': value,
             'CO2_Savings_Per_Outpost': result['co2_savings_per_outpost'],
             'CO2_Savings_All_Outposts': result['co2_savings_all_outposts'],
-            'Manned_CO2_Emissions': result['manned_co2_emissions'] / 1000,  # Convert to tonnes
-            'Autonomous_CO2_Emissions': result['autonomous_co2_emissions'] / 1000,  # Convert to tonnes
+            'Manned_CO2_Emissions': result['manned_co2_emissions'] / 1000,
+            'Autonomous_CO2_Emissions': result['autonomous_co2_emissions'] / 1000,
             'Cost_Efficiency': result['cost_efficiency_per_ton'],
             'Innovation_Fund_Score': result['innovation_fund_score']
         })
-    
     return pd.DataFrame(results)
 
 def create_sensitivity_chart(sensitivity_data, param_name, y_column, y_label):
-    """
-    Create a line chart for sensitivity analysis results
-    """
     fig = px.line(
         sensitivity_data, 
         x='Parameter_Value', 
@@ -286,25 +234,18 @@ def create_sensitivity_chart(sensitivity_data, param_name, y_column, y_label):
         title=f'Sensitivity of {y_label} to {param_name}',
         labels={'Parameter_Value': param_name, y_column: y_label}
     )
-    
     fig.update_layout(
         xaxis_title=param_name,
         yaxis_title=y_label,
         hovermode="x unified"
     )
-    
     return fig
 
 def create_innovation_fund_score_chart(sensitivity_data, param_name):
-    """
-    Create a chart showing how Innovation Fund score changes with parameter values
-    """
-    # Calculate Innovation Fund scores for each cost efficiency value
     innovation_scores = []
-    
     for index, row in sensitivity_data.iterrows():
         if row['CO2_Savings_All_Outposts'] > 0:
-            ce_ratio = 500000 / row['CO2_Savings_All_Outposts']  # Approximate grant amount / CO2 savings
+            ce_ratio = 500000 / row['CO2_Savings_All_Outposts']
             score = calculate_innovation_fund_score(ce_ratio)
         else:
             score = 0
@@ -339,11 +280,7 @@ def create_innovation_fund_score_chart(sensitivity_data, param_name):
     return fig
 
 def create_emissions_sensitivity_chart(sensitivity_data, param_name):
-    """
-    Create a dual line chart showing both manned and autonomous emissions
-    """
     fig = go.Figure()
-    
     fig.add_trace(go.Scatter(
         x=sensitivity_data['Parameter_Value'],
         y=sensitivity_data['Manned_CO2_Emissions'],
@@ -351,7 +288,6 @@ def create_emissions_sensitivity_chart(sensitivity_data, param_name):
         name='Manned Emissions',
         line=dict(color='#ff9999', width=2)
     ))
-    
     fig.add_trace(go.Scatter(
         x=sensitivity_data['Parameter_Value'],
         y=sensitivity_data['Autonomous_CO2_Emissions'],
@@ -359,7 +295,6 @@ def create_emissions_sensitivity_chart(sensitivity_data, param_name):
         name='Autonomous Emissions',
         line=dict(color='#66b3ff', width=2)
     ))
-    
     fig.add_trace(go.Scatter(
         x=sensitivity_data['Parameter_Value'],
         y=sensitivity_data['Manned_CO2_Emissions'],
@@ -369,7 +304,6 @@ def create_emissions_sensitivity_chart(sensitivity_data, param_name):
         fillcolor='rgba(0, 255, 0, 0.2)',
         line=dict(width=0)
     ))
-    
     fig.update_layout(
         title=f'CO2 Emissions Sensitivity to {param_name}',
         xaxis_title=param_name,
@@ -383,7 +317,6 @@ def create_emissions_sensitivity_chart(sensitivity_data, param_name):
             x=1
         )
     )
-    
     return fig
 
 def generate_pdf(results, params, lcoe_breakdown):
@@ -446,15 +379,14 @@ def generate_pdf(results, params, lcoe_breakdown):
     for index, row in lcoe_breakdown.iterrows():
         pdf.cell(0, 10, f"{row['Metric']}: {row['Value']:.2f}", ln=True)
     
-    # Return PDF as bytes
-    pdf_bytes = pdf.output(dest="S").encode("latin1")
+    # Use errors="replace" to handle unsupported characters
+    pdf_bytes = pdf.output(dest="S").encode("latin1", errors="replace")
     return pdf_bytes
 
 def main():
     st.title("OS4P Interactive Dashboard")
     st.markdown("### Configure Your OS4P System Below")
     
-    # User Input Fields in Sidebar
     with st.sidebar:
         st.header("User Inputs")
         st.subheader("System Configuration")
@@ -514,7 +446,6 @@ def main():
             drones_capex = st.number_input("Drones CAPEX", min_value=20000, max_value=100000, value=60000, step=5000, format="%d")
             bos_capex = st.number_input("BOS (Balance of System) CAPEX", min_value=10000, max_value=100000, value=40000, step=5000, format="%d")
     
-    # Store user inputs in a dictionary
     params = {
         "num_outposts": num_outposts,
         "large_patrol_fuel": large_patrol_fuel,
@@ -552,10 +483,8 @@ def main():
         params["drones_capex"] = drones_capex
         params["bos_capex"] = bos_capex
     
-    # Calculate results based on user inputs
     results = calculate_os4p(params)
     
-    # Create dashboard tabs, including a new LCOE Calculation tab
     tab_intro, tab_overview, tab_financial, tab_lcoe, tab_visualizations, tab_sensitivity = st.tabs(
         ["Introduction", "Overview", "Financial Details", "LCOE Calculation", "Visualizations", "Sensitivity Analysis"]
     )
@@ -673,7 +602,6 @@ def main():
         """)
         st.metric("LCOE (€/kWh)", f"{results['lcoe']:.4f}")
         
-        # Re-calculate intermediate values for breakdown
         r = interest_rate / 100
         n = loan_years
         CRF = (r * (1+r)**n) / ((1+r)**n - 1) if (1+r)**n - 1 != 0 else 0
@@ -833,6 +761,7 @@ def main():
                     'Low_Value': low_result['co2_savings_all_outposts'] - base_savings,
                     'High_Value': high_result['co2_savings_all_outposts'] - base_savings
                 })
+            
             if analyze_operations:
                 params_high = params.copy()
                 params_high['operating_days_per_year'] = min(365, int(params['operating_days_per_year'] * (1 + variation_pct/100)))
@@ -856,6 +785,7 @@ def main():
                     'Low_Value': low_result['co2_savings_all_outposts'] - base_savings,
                     'High_Value': high_result['co2_savings_all_outposts'] - base_savings
                 })
+            
             if analyze_emissions:
                 params_high = params.copy()
                 params_high['co2_factor'] = params['co2_factor'] * (1 + variation_pct/100)
@@ -931,7 +861,6 @@ def main():
                 st.warning("Please select at least one parameter group to analyze.")
     
     # Generate PDF report (aggregating key information)
-    # We'll reuse the LCOE breakdown from tab_lcoe calculation
     r = interest_rate / 100
     n = loan_years
     CRF = (r * (1+r)**n) / ((1+r)**n - 1) if (1+r)**n - 1 != 0 else 0
