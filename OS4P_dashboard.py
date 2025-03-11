@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 import plotly.express as px
-from fpdf import FPDF  # install via: pip install fpdf2
+from fpdf import FPDF  # pip install fpdf2
 
 st.set_page_config(page_title="OS4P Interactive Dashboard", layout="wide")
 
@@ -13,8 +13,8 @@ def calculate_innovation_fund_score(cost_efficiency_ratio):
     Calculate Innovation Fund score based on cost efficiency ratio
     
     For INNOVFUND-2024-NZT-PILOTS topic:
-    - If cost efficiency ratio is <= 2000 EUR/t CO2-eq: 12 - (12 x (ratio / 2000))
-    - If cost efficiency ratio is > 2000 EUR/t CO2-eq: 0 points
+    - If cost efficiency ratio is <= 2000 EUR/t CO₂-eq: 12 - (12 × (ratio / 2000))
+    - If cost efficiency ratio is > 2000 EUR/t CO₂-eq: 0 points
     
     Returns rounded to nearest half point, min 0, max 12
     """
@@ -108,13 +108,14 @@ def calculate_os4p(params):
     annual_energy = params["annual_energy_production"]
     lcoe = (annualized_capex + annual_opex_per_outpost) / annual_energy
 
-    # Prepare CAPEX breakdowns
+    # Prepare CAPEX breakdown
     capex_breakdown = {
         "Microgrid": microgrid_capex * num_outposts,
         "Drones": drones_capex * num_outposts,
         "BOS (Balance of System)": bos_capex * num_outposts
     }
     
+    # Prepare detailed CAPEX breakdown if available
     detailed_capex_breakdown = None
     if detailed_capex:
         detailed_capex_breakdown = {}
@@ -179,9 +180,14 @@ def create_cost_breakdown_chart(capex_data, opex_data, detailed_capex=None):
         opex_df['Type'] = 'OPEX (Annual)'
         combined_df = pd.concat([capex_df, opex_df])
     
-    fig = px.bar(combined_df, x='Category', y='Value', color='Type', 
-                 title='Cost Breakdown', 
-                 labels={'Value': 'Cost (€)', 'Category': ''})
+    fig = px.bar(
+        combined_df, 
+        x='Category', 
+        y='Value', 
+        color='Type', 
+        title='Cost Breakdown', 
+        labels={'Value': 'Cost (€)', 'Category': ''}
+    )
     fig.update_layout(barmode='group')
     return fig
 
@@ -328,12 +334,18 @@ def generate_pdf(results, params, lcoe_breakdown):
     """
     Generate a PDF report that aggregates key dashboard information.
     Uses a Unicode TrueType font (DejaVu Sans) to support non-Latin1 characters.
-    Ensure that "DejaVuSans.ttf" is available in your project directory.
+    Ensure the fonts folder is at the same level as this .py file,
+    and that DejaVuSans.ttf and DejaVuSans-Bold.ttf are inside.
     """
     pdf = FPDF()
+    pdf.unifontsubset = False  # Disable font subsetting to avoid issues
     pdf.add_page()
-    # Add Unicode font; make sure DejaVuSans.ttf is in the same folder
-    pdf.add_font("DejaVu", "", "DejaVuSans.ttf", uni=True)
+
+    # Load the regular and bold fonts from the "fonts" folder
+    pdf.add_font("DejaVu", "", "fonts/DejaVuSans.ttf", uni=True)
+    pdf.add_font("DejaVu", "B", "fonts/DejaVuSans-Bold.ttf", uni=True)
+
+    # Use bold font for the header
     pdf.set_font("DejaVu", "B", 16)
     pdf.cell(0, 10, "OS4P Interactive Dashboard Report", ln=True, align="C")
     
@@ -388,7 +400,7 @@ def generate_pdf(results, params, lcoe_breakdown):
     for index, row in lcoe_breakdown.iterrows():
         pdf.cell(0, 10, f"{row['Metric']}: {row['Value']:.2f}", ln=True)
     
-    # Now output the PDF as bytes; no further encoding needed.
+    # Output the PDF as bytes
     pdf_bytes = pdf.output(dest="S").encode("latin1", errors="replace")
     return pdf_bytes
 
@@ -423,8 +435,14 @@ def main():
         security_opex = st.number_input("Security OPEX", min_value=1000, max_value=30000, value=9000, step=1000, format="%d")
         
         st.subheader("Energy Production")
-        annual_energy_production = st.number_input("Annual Energy Production per Outpost (kWh/year)", 
-                                                     min_value=1000, max_value=100000, value=15000, step=1000, format="%d")
+        annual_energy_production = st.number_input(
+            "Annual Energy Production per Outpost (kWh/year)", 
+            min_value=1000, 
+            max_value=100000, 
+            value=15000, 
+            step=1000, 
+            format="%d"
+        )
         
         st.subheader("CAPEX Summary (€ per Outpost)")
         show_capex_detail = st.checkbox("Show detailed CAPEX breakdown", value=False)
@@ -455,6 +473,7 @@ def main():
             drones_capex = st.number_input("Drones CAPEX", min_value=20000, max_value=100000, value=60000, step=5000, format="%d")
             bos_capex = st.number_input("BOS (Balance of System) CAPEX", min_value=10000, max_value=100000, value=40000, step=5000, format="%d")
     
+    # Prepare the parameters dict
     params = {
         "num_outposts": num_outposts,
         "large_patrol_fuel": large_patrol_fuel,
@@ -492,8 +511,10 @@ def main():
         params["drones_capex"] = drones_capex
         params["bos_capex"] = bos_capex
     
+    # Calculate results
     results = calculate_os4p(params)
     
+    # Tabs
     tab_intro, tab_overview, tab_financial, tab_lcoe, tab_visualizations, tab_sensitivity = st.tabs(
         ["Introduction", "Overview", "Financial Details", "LCOE Calculation", "Visualizations", "Sensitivity Analysis"]
     )
@@ -851,13 +872,13 @@ def main():
                     margin=dict(l=100)
                 )
                 st.plotly_chart(fig, use_container_width=True)
-                st.markdown("""
+                st.markdown(f"""
                 ### Interpretation:
                 - This chart shows how sensitive CO₂ savings are to changes in each parameter.
                 - Longer bars indicate parameters with greater impact.
-                - Blue bars show impact when the parameter increases by {0}%.
-                - Red bars show impact when the parameter decreases by {0}%.
-                """.format(variation_pct))
+                - Blue bars show impact when the parameter increases by {variation_pct}%.
+                - Red bars show impact when the parameter decreases by {variation_pct}%.
+                """)
                 st.subheader("Parameter Elasticity")
                 st.markdown("""
                 This measures how responsive CO₂ savings are to a 1% change in each parameter.
@@ -869,7 +890,7 @@ def main():
             else:
                 st.warning("Please select at least one parameter group to analyze.")
     
-    # Generate PDF report (aggregating key information)
+    # Generate PDF
     r = interest_rate / 100
     n = loan_years
     CRF = (r * (1+r)**n) / ((1+r)**n - 1) if (1+r)**n - 1 != 0 else 0
