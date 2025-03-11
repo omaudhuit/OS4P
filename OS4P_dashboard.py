@@ -987,7 +987,7 @@ In summary, Green Sentinel (OS4P) addresses critical EU security and climate res
     })
     
     pdf_bytes = generate_pdf(results, params, lcoe_breakdown)
-    st.download_button(label="Download Report as PDF", data=pdf_bytes, file_name="OS4P_Report.pdf", mime="application/pdf")
+    st.download_button(label="Download Executive Summary", data=pdf_bytes, file_name="OS4P_Report.pdf", mime="application/pdf")
 
 if __name__ == "__main__":
     main()
