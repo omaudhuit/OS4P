@@ -53,10 +53,13 @@ def calculate_os4p(params):
     # Optional detailed CAPEX components
     detailed_capex = params.get("detailed_capex", None)
 
-    # CO₂ Savings Calculation (Including GENSET)
-    genset_fuel_per_hour = 2.5  # Liters per hour (GENSET)
-    genset_fuel_per_day = genset_fuel_per_hour * 24
-    daily_fuel_consumption = ((large_patrol_fuel + rib_fuel + small_patrol_fuel) * hours_per_day_base) + genset_fuel_per_day
+    # Updated CO₂ Savings Calculation (Including GENSET and M/S 240 GD vehicles)
+    # Calculate GENSET fuel consumption using user inputs:
+    genset_fuel_per_day = params["genset_fuel_per_hour"] * params["genset_operating_hours"]
+    # Calculate additional fuel consumption for M/S 240 GD Patrol Vehicles (operating for the same patrol hours)
+    ms240_gd_fuel_per_day = params["num_ms240_gd_vehicles"] * params["ms240_gd_fuel_consumption"] * hours_per_day_base
+    # Daily fuel consumption now includes patrol boats, GENSET, and M/S 240 GD vehicles:
+    daily_fuel_consumption = ((large_patrol_fuel + rib_fuel + small_patrol_fuel) * hours_per_day_base) + genset_fuel_per_day + ms240_gd_fuel_per_day
     annual_fuel_consumption = daily_fuel_consumption * operating_days_per_year
     manned_co2_emissions = annual_fuel_consumption * co2_factor
     autonomous_co2_emissions = maintenance_emissions
@@ -421,6 +424,12 @@ def main():
         small_patrol_fuel = st.number_input("Small Patrol Boat Fuel", min_value=5, max_value=50, value=30, step=5, format="%d")
         hours_per_day_base = st.number_input("Patrol Hours per Day", min_value=4, max_value=24, value=8, step=1, format="%d")
         
+        st.subheader("Additional Fuel Consumption Parameters")
+        genset_fuel_per_hour = st.number_input("GENSET Fuel Consumption per Hour (L/h)", min_value=0.1, max_value=10.0, value=2.5, step=0.1, format="%.1f")
+        genset_operating_hours = st.number_input("GENSET Operating Hours per Day", min_value=1, max_value=24, value=24, step=1, format="%d")
+        num_ms240_gd_vehicles = st.number_input("Number of M/S 240 GD Patrol Vehicles", min_value=0, max_value=100, value=1, step=1, format="%d")
+        ms240_gd_fuel_consumption = st.number_input("M/S 240 GD Patrol Vehicle Fuel Consumption (L/h)", min_value=50, max_value=300, value=150, step=10, format="%d")
+        
         st.subheader("Financial Parameters")
         interest_rate = st.number_input("Interest Rate (%)", min_value=1.0, max_value=15.0, value=5.0, step=0.1, format="%.1f")
         loan_years = st.number_input("Project Lifetime (years)", min_value=3, max_value=25, value=10, step=1, format="%d")
@@ -482,6 +491,10 @@ def main():
         "rib_fuel": rib_fuel,
         "small_patrol_fuel": small_patrol_fuel,
         "hours_per_day_base": hours_per_day_base,
+        "genset_fuel_per_hour": genset_fuel_per_hour,
+        "genset_operating_hours": genset_operating_hours,
+        "num_ms240_gd_vehicles": num_ms240_gd_vehicles,
+        "ms240_gd_fuel_consumption": ms240_gd_fuel_consumption,
         "interest_rate": interest_rate,
         "loan_years": loan_years,
         "sla_premium": sla_premium,
