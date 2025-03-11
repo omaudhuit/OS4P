@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 from fpdf import FPDF  # pip install fpdf2
 
-st.set_page_config(page_title="OS4P Interactive Dashboard", layout="wide")
+st.set_page_config(page_title="OS4P Green Sentinel", layout="wide")
 
 def calculate_innovation_fund_score(cost_efficiency_ratio):
     """
@@ -347,7 +347,7 @@ def generate_pdf(results, params, lcoe_breakdown):
 
     # Use bold font for the header
     pdf.set_font("DejaVu", "B", 16)
-    pdf.cell(0, 10, "OS4P Interactive Dashboard Report", ln=True, align="C")
+    pdf.cell(0, 10, "OS4P Green Sentinel", ln=True, align="C")
     
     pdf.ln(10)
     pdf.set_font("DejaVu", "B", 14)
@@ -405,7 +405,7 @@ def generate_pdf(results, params, lcoe_breakdown):
     return pdf_bytes
 
 def main():
-    st.title("OS4P Interactive Dashboard")
+    st.title("OS4P Green Sentinel")
     st.markdown("### Configure Your OS4P System Below")
     
     with st.sidebar:
@@ -522,16 +522,70 @@ def main():
     with tab_intro:
         st.header("Introduction")
         st.markdown("""
-        **Welcome to the OS4P Interactive Dashboard!**
+        ****OS4P Green Sentinel****
 
-        This dashboard is designed to help you evaluate and optimize your OS4P system by combining both environmental and financial metrics. With this tool you can:
+        Problem Statement
 
-        - **Assess Environmental Impact:** Compare CO₂ emissions between traditional manned operations and advanced autonomous systems.
-        - **Understand Financials:** Dive into detailed CAPEX and OPEX breakdowns along with financing structures.
-        - **Visualize Key Metrics:** Leverage interactive charts to see cost breakdowns, emissions comparisons, and more.
-        - **Perform Sensitivity Analyses:** Explore how changes in various parameters affect overall system performance and CO₂ savings.
+The European Union faces increasing pressures from climate change and escalating geopolitical challenges, particularly around border security and critical infrastructure resilience. Traditional surveillance methods and power solutions for remote outposts and border checkpoints predominantly rely on diesel generators and manned patrol operations, including diesel-powered vehicles and vessels. These conventional approaches:
 
-        Use the sidebar to input your specific system parameters, then navigate through the tabs to gain insights into your project’s potential.
+ - Contribute significantly to greenhouse gas emissions, exacerbating climate change impacts.
+
+ - Suffer from logistical vulnerabilities, such as fuel supply disruptions in conflict-prone or extreme weather-affected regions.
+
+ - Offer limited resilience, leading to infrastructural vulnerabilities during extreme weather or crises.
+
+ - Lack scalability, hindering expansion and modernization of surveillance and secure communication capabilities.
+
+Consequently, there is an urgent need for integrated, autonomous, and sustainable energy solutions to support border security and enhance civil protection across the EU while aligning with stringent climate and environmental targets.
+
+        Solution: Green Sentinel (OS4P)
+
+The Green Sentinel solution involves deploying autonomous Off-grid Smart Surveillance Security Sentinel Pylons (OS4P), integrating renewable energy generation, energy storage systems, drone-based surveillance, AI-driven monitoring, and secure telecommunications.
+
+Key Components:
+
+Renewable Energy Generation: Each OS4P pylon incorporates a hybrid renewable energy generation system comprising:
+
+ - Solar PV System: A 10 kWp solar photovoltaic installation capable of producing approximately 15,000 kWh annually.
+
+ - Wind Turbine: A complementary 3 kW wind turbine that generates approximately 7,500 kWh per year, bringing total renewable generation per pylon to approximately 22,500 kWh annually.
+
+ - Energy Storage System: Equipped with a robust 30 kWh battery system, each sentinel ensures continuous power supply, resilience during periods of limited renewable generation, and effective load management.
+
+        Drone-Based Autonomous Surveillance
+
+Each OS4P unit integrates AI-driven drones to provide continuous, autonomous surveillance:
+
+Drones: Two QuantumSystems Scorpion drones per pylon, consuming about 1.5 kWh per patrol cycle (totaling ~144 kWh/day for continuous operation).
+
+AI-Powered Analytics: Real-time threat detection, surveillance analytics, and automated monitoring through integrated high-resolution cameras, radar, and edge computing capabilities.
+
+        Technical Integration and Communication:
+
+Each OS4P unit integrates advanced telecommunications infrastructure:
+
+ - Secure Communications: Utilizing 5G, Starlink satellite services, and secure LINK-16 communications, ensuring robust real-time data transfer and connectivity.
+
+ - Structural Design: Robust tower structure suitable for harsh environments, ensuring resilience against extreme weather and operational disruptions.
+
+        Environmental Impact
+
+The Green Sentinel project offers significant environmental and climate benefits:
+
+ - CO₂ Emission Reductions: Each OS4P unit prevents between 18 to 30 metric tons of CO₂ emissions annually by replacing diesel-generated power. Over 10 years, the total CO₂ avoided by 45 units is projected between 8,100 to 13,500 metric tons.
+
+ - Additional CO₂ Savings: By replacing diesel-powered patrol vessels and vehicles, the cumulative 10-year CO₂ savings across a broader deployment (e.g., 200 units) could exceed 60 million kilograms.
+
+        Operational and Socio-Economic Advantages
+
+ - Security Enhancement: Continuous, automated surveillance improves response time and situational awareness, significantly enhancing border and infrastructure security.
+
+ - Job Creation: Local jobs in installation, operation, and ongoing maintenance.
+
+ - Innovation Leadership: Demonstrates a scalable, sustainable, and replicable model aligning with the EU’s Green Deal and security frameworks.
+
+In summary, Green Sentinel (OS4P) addresses critical EU security and climate resilience challenges by integrating renewable energy and autonomous surveillance, setting a new standard for sustainable, resilient, and efficient border security and critical infrastructure protection.
+
         """)
     
     with tab_overview:
