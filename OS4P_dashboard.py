@@ -4,8 +4,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 import plotly.express as px
+from fpdf import FPDF  # make sure to install fpdf2
 
-st.set_page_config(page_title="OS4P Green Sentinel", layout="wide")
+st.set_page_config(page_title="OS4P Interactive Dashboard", layout="wide")
 
 def calculate_innovation_fund_score(cost_efficiency_ratio):
     """
@@ -302,22 +303,16 @@ def create_innovation_fund_score_chart(sensitivity_data, param_name):
     innovation_scores = []
     
     for index, row in sensitivity_data.iterrows():
-        # Calculate cost efficiency for this row
         if row['CO2_Savings_All_Outposts'] > 0:
-            # Using a proxy for total_grant / co2_savings since we don't have total_grant in sensitivity data
-            # This is just for visualization purposes to show the trend
             ce_ratio = 500000 / row['CO2_Savings_All_Outposts']  # Approximate grant amount / CO2 savings
             score = calculate_innovation_fund_score(ce_ratio)
         else:
             score = 0
-            
         innovation_scores.append(score)
     
-    # Add scores to the data
     score_data = sensitivity_data.copy()
     score_data['Innovation_Fund_Score'] = innovation_scores
     
-    # Create chart
     fig = px.line(
         score_data,
         x='Parameter_Value',
@@ -327,7 +322,6 @@ def create_innovation_fund_score_chart(sensitivity_data, param_name):
         labels={'Parameter_Value': param_name, 'Innovation_Fund_Score': 'Innovation Fund Score (0-12)'}
     )
     
-    # Add reference lines for score thresholds
     fig.add_hline(y=9, line_dash="dash", line_color="green", annotation_text="Excellent (≥9)", 
                  annotation_position="top right")
     fig.add_hline(y=6, line_dash="dash", line_color="orange", annotation_text="Good (≥6)", 
@@ -366,7 +360,6 @@ def create_emissions_sensitivity_chart(sensitivity_data, param_name):
         line=dict(color='#66b3ff', width=2)
     ))
     
-    # Add CO2 savings as a filled area
     fig.add_trace(go.Scatter(
         x=sensitivity_data['Parameter_Value'],
         y=sensitivity_data['Manned_CO2_Emissions'],
@@ -393,15 +386,77 @@ def create_emissions_sensitivity_chart(sensitivity_data, param_name):
     
     return fig
 
-def main():
-    st.title("OS4P Green Sentinel")
+def generate_pdf(results, params, lcoe_breakdown):
+    """
+    Generate a PDF report that aggregates key dashboard information.
+    """
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", "B", 16)
+    pdf.cell(0, 10, "OS4P Interactive Dashboard Report", ln=True, align="C")
     
+    pdf.ln(10)
+    pdf.set_font("Arial", "B", 14)
+    pdf.cell(0, 10, "Introduction", ln=True)
+    pdf.set_font("Arial", "", 12)
+    intro_text = (
+        "This report summarizes the evaluation of your OS4P system by combining both environmental "
+        "and financial metrics. It provides insights into CO₂ emissions, cost breakdowns, financing details, "
+        "and the Levelized Cost of Electricity (LCOE)."
+    )
+    pdf.multi_cell(0, 10, intro_text)
+    
+    pdf.ln(5)
+    pdf.set_font("Arial", "B", 14)
+    pdf.cell(0, 10, "Overview Metrics", ln=True)
+    pdf.set_font("Arial", "", 12)
+    pdf.cell(0, 10, f"CO₂ Savings per Outpost (tonnes/year): {results['co2_savings_per_outpost']:.1f}", ln=True)
+    pdf.cell(0, 10, f"Total CO₂ Savings per Year (tonnes): {results['co2_savings_all_outposts']:.1f}", ln=True)
+    pdf.cell(0, 10, f"Lifetime CO₂ Savings (tonnes): {results['co2_savings_lifetime']:.1f}", ln=True)
+    
+    pdf.ln(5)
+    pdf.set_font("Arial", "B", 14)
+    pdf.cell(0, 10, "Cost Metrics", ln=True)
+    pdf.set_font("Arial", "", 12)
+    pdf.cell(0, 10, f"Total CAPEX (€): {results['total_capex']:,.0f}", ln=True)
+    pdf.cell(0, 10, f"CAPEX per Outpost (€): {results['total_capex_per_outpost']:,.0f}", ln=True)
+    pdf.cell(0, 10, f"Annual OPEX (€/year): {results['annual_opex']:,.0f}", ln=True)
+    pdf.cell(0, 10, f"OPEX per Outpost (€/year): {results['annual_opex_per_outpost']:,.0f}", ln=True)
+    pdf.cell(0, 10, f"Total Cost of Ownership (€): {results['tco']:,.0f}", ln=True)
+    pdf.cell(0, 10, f"TCO per Outpost (€): {results['tco_per_outpost']:,.0f}", ln=True)
+    
+    pdf.ln(5)
+    pdf.set_font("Arial", "B", 14)
+    pdf.cell(0, 10, "Financial Details", ln=True)
+    pdf.set_font("Arial", "", 12)
+    pdf.cell(0, 10, f"Total Pilot Cost with Markup (€): {results['pilot_markup']:,.0f}", ln=True)
+    pdf.cell(0, 10, f"Grant Coverage (€): {results['total_grant']:,.0f}", ln=True)
+    pdf.cell(0, 10, f"Debt Financing Required (€): {results['debt']:,.0f}", ln=True)
+    
+    pdf.ln(5)
+    pdf.set_font("Arial", "B", 14)
+    pdf.cell(0, 10, "LCOE Calculation", ln=True)
+    pdf.set_font("Arial", "", 12)
+    pdf.cell(0, 10, f"LCOE (€/kWh): {results['lcoe']:.4f}", ln=True)
+    
+    pdf.ln(5)
+    pdf.set_font("Arial", "B", 12)
+    pdf.cell(0, 10, "Calculation Breakdown:", ln=True)
+    pdf.set_font("Arial", "", 12)
+    for index, row in lcoe_breakdown.iterrows():
+        pdf.cell(0, 10, f"{row['Metric']}: {row['Value']:.2f}", ln=True)
+    
+    # Return PDF as bytes
+    pdf_bytes = pdf.output(dest="S").encode("latin1")
+    return pdf_bytes
+
+def main():
+    st.title("OS4P Interactive Dashboard")
     st.markdown("### Configure Your OS4P System Below")
     
-    # User Input Fields
+    # User Input Fields in Sidebar
     with st.sidebar:
         st.header("User Inputs")
-
         st.subheader("System Configuration")
         num_outposts = st.number_input("Number of Outposts", min_value=1, max_value=1000, value=10, step=1, format="%d")
         
@@ -415,12 +470,12 @@ def main():
         interest_rate = st.number_input("Interest Rate (%)", min_value=1.0, max_value=15.0, value=5.0, step=0.1, format="%.1f")
         loan_years = st.number_input("Project Lifetime (years)", min_value=3, max_value=25, value=10, step=1, format="%d")
         sla_premium = st.number_input("SLA Premium (%)", min_value=0.0, max_value=50.0, value=15.0, step=1.0, format="%.1f")
-
+        
         st.subheader("Operational Parameters")
         operating_days_per_year = st.number_input("Operating Days per Year", min_value=200, max_value=365, value=300, step=1, format="%d")
         co2_factor = st.number_input("CO₂ Factor (kg CO₂ per liter)", min_value=0.5, max_value=3.0, value=1.0, step=0.1, format="%.1f")
         maintenance_emissions = st.number_input("Maintenance Emissions (kg CO₂)", min_value=500, max_value=5000, value=1594, step=10, format="%d")
-
+        
         st.subheader("OPEX Inputs (€ per Outpost per Year)")
         maintenance_opex = st.number_input("Maintenance OPEX", min_value=1000, max_value=50000, value=15000, step=1000, format="%d")
         communications_opex = st.number_input("Communications OPEX", min_value=1000, max_value=20000, value=6000, step=1000, format="%d")
@@ -430,10 +485,7 @@ def main():
         annual_energy_production = st.number_input("Annual Energy Production per Outpost (kWh/year)", 
                                                      min_value=1000, max_value=100000, value=15000, step=1000, format="%d")
         
-        # Main CAPEX inputs
         st.subheader("CAPEX Summary (€ per Outpost)")
-        
-        # CAPEX Detailed Breakdown toggle
         show_capex_detail = st.checkbox("Show detailed CAPEX breakdown", value=False)
         
         if show_capex_detail:
@@ -444,32 +496,25 @@ def main():
             telecom_capex = st.number_input("Telecommunications", min_value=5000, max_value=50000, value=15000, step=1000, format="%d")
             bos_micro_capex = st.number_input("Microgrid BOS", min_value=5000, max_value=50000, value=20000, step=1000, format="%d")
             install_capex = st.number_input("Installation & Commissioning", min_value=5000, max_value=50000, value=12000, step=1000, format="%d")
-            
-            # Calculate total microgrid CAPEX from components
             microgrid_capex = solar_pv_capex + wind_turbine_capex + battery_capex + telecom_capex + bos_micro_capex + install_capex
             st.markdown(f"**Total Microgrid CAPEX: €{microgrid_capex:,}**")
             
             st.markdown("#### Drone System CAPEX Breakdown")
             drone_units = st.number_input("Number of Drones per Outpost", min_value=1, max_value=10, value=3, step=1, format="%d")
             drone_unit_cost = st.number_input("Cost per Drone (€)", min_value=5000, max_value=50000, value=20000, step=1000, format="%d")
-            
-            # Calculate total drone CAPEX
             drones_capex = drone_units * drone_unit_cost
             st.markdown(f"**Total Drones CAPEX: €{drones_capex:,}**")
             
             st.markdown("#### Other CAPEX")
             bos_capex = st.number_input("Additional BOS CAPEX", min_value=0, max_value=100000, value=40000, step=5000, format="%d")
-            
-            # Show total CAPEX
             total_capex_per_outpost = microgrid_capex + drones_capex + bos_capex
             st.markdown(f"**Total CAPEX per Outpost: €{total_capex_per_outpost:,}**")
         else:
-            # Simple CAPEX inputs without breakdown
             microgrid_capex = st.number_input("Microgrid CAPEX", min_value=50000, max_value=200000, value=110000, step=5000, format="%d")
             drones_capex = st.number_input("Drones CAPEX", min_value=20000, max_value=100000, value=60000, step=5000, format="%d")
             bos_capex = st.number_input("BOS (Balance of System) CAPEX", min_value=10000, max_value=100000, value=40000, step=5000, format="%d")
     
-    # Store user inputs in a params dictionary
+    # Store user inputs in a dictionary
     params = {
         "num_outposts": num_outposts,
         "large_patrol_fuel": large_patrol_fuel,
@@ -488,13 +533,10 @@ def main():
         "annual_energy_production": annual_energy_production
     }
     
-    # Add CAPEX parameters based on whether detailed breakdown is used
     if show_capex_detail:
         params["microgrid_capex"] = microgrid_capex
         params["drones_capex"] = drones_capex
         params["bos_capex"] = bos_capex
-        
-        # Add detailed CAPEX breakdown
         params["detailed_capex"] = {
             "Solar PV (10kWp)": solar_pv_capex,
             "Wind Turbine (3kW)": wind_turbine_capex,
@@ -510,10 +552,10 @@ def main():
         params["drones_capex"] = drones_capex
         params["bos_capex"] = bos_capex
     
-    # Calculate results
+    # Calculate results based on user inputs
     results = calculate_os4p(params)
-
-    # Create tabs for organized display, including the new 'LCOE Calculation' tab
+    
+    # Create dashboard tabs, including a new LCOE Calculation tab
     tab_intro, tab_overview, tab_financial, tab_lcoe, tab_visualizations, tab_sensitivity = st.tabs(
         ["Introduction", "Overview", "Financial Details", "LCOE Calculation", "Visualizations", "Sensitivity Analysis"]
     )
@@ -521,75 +563,19 @@ def main():
     with tab_intro:
         st.header("Introduction")
         st.markdown("""
-        **OS4P Green Sentinel**
+        **Welcome to the OS4P Interactive Dashboard!**
 
-        Problem Statement
+        This dashboard is designed to help you evaluate and optimize your OS4P system by combining both environmental and financial metrics. With this tool you can:
 
-The European Union faces increasing pressures from climate change and escalating geopolitical challenges, particularly around border security and critical infrastructure resilience. Traditional surveillance methods and power solutions for remote outposts and border checkpoints predominantly rely on diesel generators and manned patrol operations, including diesel-powered vehicles and vessels. These conventional approaches:
+        - **Assess Environmental Impact:** Compare CO₂ emissions between traditional manned operations and advanced autonomous systems.
+        - **Understand Financials:** Dive into detailed CAPEX and OPEX breakdowns along with financing structures.
+        - **Visualize Key Metrics:** Leverage interactive charts to see cost breakdowns, emissions comparisons, and more.
+        - **Perform Sensitivity Analyses:** Explore how changes in various parameters affect overall system performance and CO₂ savings.
 
- - Contribute significantly to greenhouse gas emissions, exacerbating climate change impacts.
-
- - Suffer from logistical vulnerabilities, such as fuel supply disruptions in conflict-prone or extreme weather-affected regions.
-
- - Offer limited resilience, leading to infrastructural vulnerabilities during extreme weather or crises.
-
- - Lack scalability, hindering expansion and modernization of surveillance and secure communication capabilities.
-
-Consequently, there is an urgent need for integrated, autonomous, and sustainable energy solutions to support border security and enhance civil protection across the EU while aligning with stringent climate and environmental targets.
-
-        Solution: Green Sentinel (OS4P)
-
-The Green Sentinel solution involves deploying autonomous Off-grid Smart Surveillance Security Sentinel Pylons (OS4P), integrating renewable energy generation, energy storage systems, drone-based surveillance, AI-driven monitoring, and secure telecommunications.
-
-Key Components:
-
-Renewable Energy Generation: Each OS4P pylon incorporates a hybrid renewable energy generation system comprising:
-
- - Solar PV System: A 10 kWp solar photovoltaic installation capable of producing approximately 15,000 kWh annually.
-
- - Wind Turbine: A complementary 3 kW wind turbine that generates approximately 7,500 kWh per year, bringing total renewable generation per pylon to approximately 22,500 kWh annually.
-
- - Energy Storage System: Equipped with a robust 30 kWh battery system, each sentinel ensures continuous power supply, resilience during periods of limited renewable generation, and effective load management.
-
-        Drone-Based Autonomous Surveillance
-
-Each OS4P unit integrates AI-driven drones to provide continuous, autonomous surveillance:
-
-Drones: Two QuantumSystems Scorpion drones per pylon, consuming about 1.5 kWh per patrol cycle (totaling ~144 kWh/day for continuous operation).
-
-AI-Powered Analytics: Real-time threat detection, surveillance analytics, and automated monitoring through integrated high-resolution cameras, radar, and edge computing capabilities.
-
-        Technical Integration and Communication:
-
-Each OS4P unit integrates advanced telecommunications infrastructure:
-
- - Secure Communications: Utilizing 5G, Starlink satellite services, and secure LINK-16 communications, ensuring robust real-time data transfer and connectivity.
-
- - Structural Design: Robust tower structure suitable for harsh environments, ensuring resilience against extreme weather and operational disruptions.
-
-        Environmental Impact
-
-The Green Sentinel project offers significant environmental and climate benefits:
-
- - CO₂ Emission Reductions: Each OS4P unit prevents between 18 to 30 metric tons of CO₂ emissions annually by replacing diesel-generated power. Over 10 years, the total CO₂ avoided by 45 units is projected between 8,100 to 13,500 metric tons.
-
- - Additional CO₂ Savings: By replacing diesel-powered patrol vessels and vehicles, the cumulative 10-year CO₂ savings across a broader deployment (e.g., 200 units) could exceed 60 million kilograms.
-
-        Operational and Socio-Economic Advantages
-
- - Security Enhancement: Continuous, automated surveillance improves response time and situational awareness, significantly enhancing border and infrastructure security.
-
- - Job Creation: Local jobs in installation, operation, and ongoing maintenance.
-
- - Innovation Leadership: Demonstrates a scalable, sustainable, and replicable model aligning with the EU’s Green Deal and security frameworks.
-
-In summary, Green Sentinel (OS4P) addresses critical EU security and climate resilience challenges by integrating renewable energy and autonomous surveillance, setting a new standard for sustainable, resilient, and efficient border security and critical infrastructure protection.
-
-
+        Use the sidebar to input your specific system parameters, then navigate through the tabs to gain insights into your project’s potential.
         """)
-
+    
     with tab_overview:
-        # CO2 metrics
         st.subheader("Environmental Impact")
         col1, col2, col3 = st.columns(3)
         with col1:
@@ -599,7 +585,6 @@ In summary, Green Sentinel (OS4P) addresses critical EU security and climate res
         with col3:
             st.metric("Lifetime CO₂ Savings (tonnes)", f"{results['co2_savings_lifetime']:.1f}")
         
-        # Cost metrics
         st.subheader("Cost Overview")
         col1, col2, col3 = st.columns(3)
         with col1:
@@ -610,12 +595,9 @@ In summary, Green Sentinel (OS4P) addresses critical EU security and climate res
             st.metric("OPEX per Outpost (€/year)", f"{results['annual_opex_per_outpost']:,.0f}")
         with col3:
             st.metric("Total Cost of Ownership (€)", f"{results['tco']:,.0f}")
-            st.metric("TCO per Outpost (€)", f"{results['tco_per_outposts']:,.0f}" if "tco_per_outposts" in results else f"{results['tco_per_outpost']:,.0f}")
+            st.metric("TCO per Outpost (€)", f"{results['tco_per_outpost']:,.0f}")
         
-        # Efficiency and Innovation Fund metrics
         st.subheader("Efficiency Metrics & Innovation Fund Score")
-        
-        # Show Innovation Fund scoring explanation
         with st.expander("Innovation Fund Scoring Criteria"):
             st.markdown("""
             **Innovation Fund Scoring for Cost Efficiency (INNOVFUND-2024-NZT-PILOTS)**
@@ -638,42 +620,18 @@ In summary, Green Sentinel (OS4P) addresses critical EU security and climate res
             ce_yearly = results['cost_efficiency_per_ton']
             ce_yearly_str = f"{ce_yearly:,.0f}" if ce_yearly != float('inf') else "∞"
             st.metric("Cost per Tonne CO₂ Saved (€/tonne/year)", ce_yearly_str)
-            
-            # Calculate Innovation Fund score color
-            if results['innovation_fund_score'] >= 9:
-                score_color = "green"
-            elif results['innovation_fund_score'] >= 6:
-                score_color = "orange"
-            else:
-                score_color = "red"
-            
+            score_color = "green" if results['innovation_fund_score'] >= 9 else ("orange" if results['innovation_fund_score'] >= 6 else "red")
             st.markdown(f"<h3 style='color: {score_color}'>Innovation Fund Score: {results['innovation_fund_score']}/12</h3>", unsafe_allow_html=True)
-            
-            # Create progress bar for Innovation Fund score
-            score_percentage = (results['innovation_fund_score'] / 12) * 100
-            st.progress(score_percentage / 100)
-        
+            st.progress((results['innovation_fund_score'] / 12))
         with col2:
             ce_lifetime = results['cost_efficiency_lifetime']
             ce_lifetime_str = f"{ce_lifetime:,.0f}" if ce_lifetime != float('inf') else "∞"
             st.metric("Lifetime Cost per Tonne CO₂ Saved (€/tonne)", ce_lifetime_str)
-            
-            # Calculate lifetime Innovation Fund score color
-            if results['innovation_fund_score_lifetime'] >= 9:
-                score_lifetime_color = "green"
-            elif results['innovation_fund_score_lifetime'] >= 6:
-                score_lifetime_color = "orange"
-            else:
-                score_lifetime_color = "red"
-            
+            score_lifetime_color = "green" if results['innovation_fund_score_lifetime'] >= 9 else ("orange" if results['innovation_fund_score_lifetime'] >= 6 else "red")
             st.markdown(f"<h3 style='color: {score_lifetime_color}'>Lifetime Score: {results['innovation_fund_score_lifetime']}/12</h3>", unsafe_allow_html=True)
-            
-            # Create progress bar for lifetime Innovation Fund score
-            score_lifetime_percentage = (results['innovation_fund_score_lifetime'] / 12) * 100
-            st.progress(score_lifetime_percentage / 100)
+            st.progress((results['innovation_fund_score_lifetime'] / 12))
     
     with tab_financial:
-        # Financial details
         st.subheader("Financing Details")
         col1, col2, col3 = st.columns(3)
         with col1:
@@ -688,10 +646,7 @@ In summary, Green Sentinel (OS4P) addresses critical EU security and climate res
             st.metric("Annual Fee per Outpost (€)", f"{results['annual_fee_unit']:,.0f}")
             st.metric("Lifetime Total Fee (€)", f"{results['lifetime_fee_total']:,.0f}")
         
-        # CAPEX Breakdown
         st.subheader("CAPEX Breakdown")
-        
-        # Check if detailed CAPEX breakdown is available
         if "detailed_capex_breakdown" in results:
             detailed_capex_df = pd.DataFrame.from_dict(results["detailed_capex_breakdown"], orient='index', columns=["Amount (€)"])
             detailed_capex_df["Percentage"] = (detailed_capex_df["Amount (€)"] / detailed_capex_df["Amount (€)"].sum() * 100).round(1).astype(str) + '%'
@@ -702,7 +657,6 @@ In summary, Green Sentinel (OS4P) addresses critical EU security and climate res
             capex_df["Percentage"] = (capex_df["Amount (€)"] / capex_df["Amount (€)"].sum() * 100).round(1).astype(str) + '%'
             st.dataframe(capex_df)
         
-        # OPEX Breakdown
         st.subheader("Annual OPEX Breakdown")
         opex_df = pd.DataFrame.from_dict(results["opex_breakdown"], orient='index', columns=["Amount (€)"])
         opex_df["Percentage"] = (opex_df["Amount (€)"] / opex_df["Amount (€)"].sum() * 100).round(1).astype(str) + '%'
@@ -711,7 +665,7 @@ In summary, Green Sentinel (OS4P) addresses critical EU security and climate res
     with tab_lcoe:
         st.header("LCOE Calculation")
         st.markdown("""
-        **Levelized Cost of Electricity (LCOE)** is a key metric that represents the cost per unit of electricity generated over the lifetime of the system.
+        **Levelized Cost of Electricity (LCOE)** is a key metric representing the cost per unit of electricity generated over the system’s lifetime.
         
         The LCOE is calculated as:
         
@@ -722,10 +676,7 @@ In summary, Green Sentinel (OS4P) addresses critical EU security and climate res
         # Re-calculate intermediate values for breakdown
         r = interest_rate / 100
         n = loan_years
-        if (1+r)**n - 1 != 0:
-            CRF = (r * (1+r)**n) / ((1+r)**n - 1)
-        else:
-            CRF = 0
+        CRF = (r * (1+r)**n) / ((1+r)**n - 1) if (1+r)**n - 1 != 0 else 0
         total_capex_per_outpost = params["microgrid_capex"] + params["drones_capex"] + params["bos_capex"]
         annualized_capex = total_capex_per_outpost * CRF
         annual_opex_per_outpost = results["annual_opex_per_outpost"]
@@ -739,25 +690,19 @@ In summary, Green Sentinel (OS4P) addresses critical EU security and climate res
         st.table(lcoe_breakdown)
     
     with tab_visualizations:
-        # Cost breakdown visualization
         st.subheader("Cost Breakdown Visualization")
         if "detailed_capex_breakdown" in results:
-            cost_chart = create_cost_breakdown_chart(results["capex_breakdown"], results["opex_breakdown"], 
-                                                    detailed_capex=results["detailed_capex_breakdown"])
+            cost_chart = create_cost_breakdown_chart(results["capex_breakdown"], results["opex_breakdown"], detailed_capex=results["detailed_capex_breakdown"])
         else:
             cost_chart = create_cost_breakdown_chart(results["capex_breakdown"], results["opex_breakdown"])
-        
         st.plotly_chart(cost_chart)
         
-        # CO2 comparison visualization
         st.subheader("CO₂ Emissions Comparison")
         co2_chart = create_co2_comparison_chart(results["co2_factors"])
         st.plotly_chart(co2_chart)
     
     with tab_sensitivity:
         st.subheader("CO₂ Emissions Sensitivity Analysis")
-        
-        # Parameter selection
         st.markdown("Select a parameter to analyze its impact on CO₂ emissions:")
         
         sensitivity_param_options = {
@@ -777,8 +722,6 @@ In summary, Green Sentinel (OS4P) addresses critical EU security and climate res
                 list(sensitivity_param_options.keys()),
                 format_func=lambda x: sensitivity_param_options[x]
             )
-            
-            # Define range based on selected parameter
             if selected_param == "large_patrol_fuel":
                 min_val, max_val, default_val, step = 50, 300, params[selected_param], 25
             elif selected_param == "rib_fuel":
@@ -802,18 +745,13 @@ In summary, Green Sentinel (OS4P) addresses critical EU security and climate res
             if min_range >= max_range:
                 st.error("Minimum value must be less than maximum value!")
             else:
-                # Generate range values
                 if selected_param == "co2_factor":
                     range_values = np.linspace(min_range, max_range, int(num_steps))
                 else:
                     range_values = np.linspace(min_range, max_range, int(num_steps))
                     if selected_param in ["hours_per_day_base", "operating_days_per_year"]:
                         range_values = range_values.astype(int)
-                
-                # Perform sensitivity analysis
                 sensitivity_results = perform_sensitivity_analysis(params, selected_param, range_values)
-                
-                # Display data table
                 st.markdown("#### Sensitivity Analysis Results:")
                 st.dataframe(sensitivity_results.style.format({
                     'Parameter_Value': '{:.2f}' if selected_param == "co2_factor" else '{:.0f}',
@@ -823,12 +761,9 @@ In summary, Green Sentinel (OS4P) addresses critical EU security and climate res
                     'Autonomous_CO2_Emissions': '{:.2f}'
                 }))
         
-        # Visualization of sensitivity analysis
         st.markdown("#### Sensitivity Analysis Visualizations")
         col1, col2 = st.columns(2)
-        
         with col1:
-            # Total CO2 savings chart
             co2_savings_chart = create_sensitivity_chart(
                 sensitivity_results, 
                 sensitivity_param_options[selected_param],
@@ -836,26 +771,19 @@ In summary, Green Sentinel (OS4P) addresses critical EU security and climate res
                 'Total CO₂ Savings (tonnes/year)'
             )
             st.plotly_chart(co2_savings_chart, use_container_width=True)
-        
         with col2:
-            # Emissions comparison chart
             emissions_chart = create_emissions_sensitivity_chart(
                 sensitivity_results,
                 sensitivity_param_options[selected_param]
             )
             st.plotly_chart(emissions_chart, use_container_width=True)
         
-        # Innovation Fund Score sensitivity chart
         st.markdown("#### Innovation Fund Score Sensitivity")
-        
-        # Show Innovation Fund score chart
         innovation_score_chart = create_innovation_fund_score_chart(
             sensitivity_results,
             sensitivity_param_options[selected_param]
         )
         st.plotly_chart(innovation_score_chart, use_container_width=True)
-        
-        # Add explanation
         st.markdown("""
         This chart shows how the Innovation Fund score changes with the parameter value. 
         Higher scores (closer to 12) improve chances of funding. Scores are calculated based on the 
@@ -864,12 +792,8 @@ In summary, Green Sentinel (OS4P) addresses critical EU security and climate res
         **Score = 12 - (12 × cost efficiency ratio / 2000)** when ratio ≤ 2000 EUR/t, **0** otherwise.
         """)
         
-        # Tornado chart for relative importance of different parameters
         st.subheader("Multi-Parameter Impact Analysis")
-        
-        # User can select which parameters to include in the tornado analysis
         st.markdown("Analyze the impact of multiple parameters simultaneously:")
-        
         col1, col2, col3 = st.columns(3)
         with col1:
             analyze_patrol_fuel = st.checkbox("Patrol Boat Fuel Consumption", value=True)
@@ -882,117 +806,85 @@ In summary, Green Sentinel (OS4P) addresses critical EU security and climate res
                               help="How much each parameter will be varied up and down from the base case")
         
         if st.button("Run Multi-Parameter Analysis"):
-            # Initialize data for tornado chart
             tornado_data = []
-            
-            # Base case CO2 savings
             base_result = calculate_os4p(params)
             base_savings = base_result['co2_savings_all_outposts']
             
             if analyze_patrol_fuel:
-                # Large patrol boat fuel
                 params_high = params.copy()
                 params_high['large_patrol_fuel'] = params['large_patrol_fuel'] * (1 + variation_pct/100)
                 high_result = calculate_os4p(params_high)
-                
                 params_low = params.copy()
                 params_low['large_patrol_fuel'] = params['large_patrol_fuel'] * (1 - variation_pct/100)
                 low_result = calculate_os4p(params_low)
-                
                 tornado_data.append({
                     'Parameter': 'Large Patrol Fuel',
                     'Low_Value': low_result['co2_savings_all_outposts'] - base_savings,
                     'High_Value': high_result['co2_savings_all_outposts'] - base_savings
                 })
-                
-                # RIB fuel
                 params_high = params.copy()
                 params_high['rib_fuel'] = params['rib_fuel'] * (1 + variation_pct/100)
                 high_result = calculate_os4p(params_high)
-                
                 params_low = params.copy()
                 params_low['rib_fuel'] = params['rib_fuel'] * (1 - variation_pct/100)
                 low_result = calculate_os4p(params_low)
-                
                 tornado_data.append({
                     'Parameter': 'RIB Fuel',
                     'Low_Value': low_result['co2_savings_all_outposts'] - base_savings,
                     'High_Value': high_result['co2_savings_all_outposts'] - base_savings
                 })
-            
             if analyze_operations:
-                # Operating days
                 params_high = params.copy()
                 params_high['operating_days_per_year'] = min(365, int(params['operating_days_per_year'] * (1 + variation_pct/100)))
                 high_result = calculate_os4p(params_high)
-                
                 params_low = params.copy()
                 params_low['operating_days_per_year'] = max(200, int(params['operating_days_per_year'] * (1 - variation_pct/100)))
                 low_result = calculate_os4p(params_low)
-                
                 tornado_data.append({
                     'Parameter': 'Operating Days',
                     'Low_Value': low_result['co2_savings_all_outposts'] - base_savings,
                     'High_Value': high_result['co2_savings_all_outposts'] - base_savings
                 })
-                
-                # Hours per day
                 params_high = params.copy()
                 params_high['hours_per_day_base'] = min(24, int(params['hours_per_day_base'] * (1 + variation_pct/100)))
                 high_result = calculate_os4p(params_high)
-                
                 params_low = params.copy()
                 params_low['hours_per_day_base'] = max(4, int(params['hours_per_day_base'] * (1 - variation_pct/100)))
                 low_result = calculate_os4p(params_low)
-                
                 tornado_data.append({
                     'Parameter': 'Hours per Day',
                     'Low_Value': low_result['co2_savings_all_outposts'] - base_savings,
                     'High_Value': high_result['co2_savings_all_outposts'] - base_savings
                 })
-            
             if analyze_emissions:
-                # CO2 factor
                 params_high = params.copy()
                 params_high['co2_factor'] = params['co2_factor'] * (1 + variation_pct/100)
                 high_result = calculate_os4p(params_high)
-                
                 params_low = params.copy()
                 params_low['co2_factor'] = params['co2_factor'] * (1 - variation_pct/100)
                 low_result = calculate_os4p(params_low)
-                
                 tornado_data.append({
                     'Parameter': 'CO₂ Factor',
                     'Low_Value': low_result['co2_savings_all_outposts'] - base_savings,
                     'High_Value': high_result['co2_savings_all_outposts'] - base_savings
                 })
-                
-                # Maintenance emissions
                 params_high = params.copy()
                 params_high['maintenance_emissions'] = params['maintenance_emissions'] * (1 + variation_pct/100)
                 high_result = calculate_os4p(params_high)
-                
                 params_low = params.copy()
                 params_low['maintenance_emissions'] = params['maintenance_emissions'] * (1 - variation_pct/100)
                 low_result = calculate_os4p(params_low)
-                
                 tornado_data.append({
                     'Parameter': 'Maintenance Emissions',
                     'Low_Value': low_result['co2_savings_all_outposts'] - base_savings,
                     'High_Value': high_result['co2_savings_all_outposts'] - base_savings
                 })
             
-            # Create tornado chart
             if tornado_data:
-                # Convert to DataFrame and sort by impact magnitude
                 tornado_df = pd.DataFrame(tornado_data)
                 tornado_df['Total_Impact'] = tornado_df['High_Value'].abs() + tornado_df['Low_Value'].abs()
                 tornado_df = tornado_df.sort_values('Total_Impact', ascending=False)
-                
-                # Create tornado chart
                 fig = go.Figure()
-                
-                # Add bars for high values (positive impact)
                 fig.add_trace(go.Bar(
                     y=tornado_df['Parameter'],
                     x=tornado_df['High_Value'],
@@ -1000,8 +892,6 @@ In summary, Green Sentinel (OS4P) addresses critical EU security and climate res
                     orientation='h',
                     marker=dict(color='#66b3ff')
                 ))
-                
-                # Add bars for low values (negative impact)
                 fig.add_trace(go.Bar(
                     y=tornado_df['Parameter'],
                     x=tornado_df['Low_Value'],
@@ -1009,8 +899,6 @@ In summary, Green Sentinel (OS4P) addresses critical EU security and climate res
                     orientation='h',
                     marker=dict(color='#ff9999')
                 ))
-                
-                # Update layout
                 fig.update_layout(
                     title='Tornado Chart: Impact on CO₂ Savings (±{0}% parameter variation)'.format(variation_pct),
                     xaxis_title='Change in CO₂ Savings (tonnes/year)',
@@ -1023,32 +911,41 @@ In summary, Green Sentinel (OS4P) addresses critical EU security and climate res
                     ),
                     margin=dict(l=100)
                 )
-                
                 st.plotly_chart(fig, use_container_width=True)
-                
-                
-                # Display explanation
                 st.markdown("""
                 ### Interpretation:
-                - This chart shows how sensitive CO₂ savings are to changes in each parameter
-                - Longer bars indicate parameters with greater impact
-                - Blue bars show impact when parameter increases by {0}%
-                - Red bars show impact when parameter decreases by {0}%
+                - This chart shows how sensitive CO₂ savings are to changes in each parameter.
+                - Longer bars indicate parameters with greater impact.
+                - Blue bars show impact when the parameter increases by {0}%.
+                - Red bars show impact when the parameter decreases by {0}%.
                 """.format(variation_pct))
-                
-                # Calculate parameter elasticity
                 st.subheader("Parameter Elasticity")
                 st.markdown("""
                 This measures how responsive CO₂ savings are to a 1% change in each parameter.
                 Higher absolute values indicate more influential parameters.
                 """)
-                
                 tornado_df['Elasticity'] = (tornado_df['High_Value'] / base_savings) / (variation_pct/100)
                 elasticity_df = tornado_df[['Parameter', 'Elasticity']].sort_values('Elasticity', ascending=False, key=abs)
-                
                 st.dataframe(elasticity_df.style.format({'Elasticity': '{:.3f}'}))
             else:
                 st.warning("Please select at least one parameter group to analyze.")
+    
+    # Generate PDF report (aggregating key information)
+    # We'll reuse the LCOE breakdown from tab_lcoe calculation
+    r = interest_rate / 100
+    n = loan_years
+    CRF = (r * (1+r)**n) / ((1+r)**n - 1) if (1+r)**n - 1 != 0 else 0
+    total_capex_per_outpost = params["microgrid_capex"] + params["drones_capex"] + params["bos_capex"]
+    annualized_capex = total_capex_per_outpost * CRF
+    annual_opex_per_outpost = results["annual_opex_per_outpost"]
+    annual_energy = annual_energy_production
+    lcoe_breakdown = pd.DataFrame({
+        "Metric": ["Annualized CAPEX per Outpost (€/year)", "Annual OPEX per Outpost (€/year)", "Annual Energy Production (kWh/year)"],
+        "Value": [annualized_capex, annual_opex_per_outpost, annual_energy]
+    })
+    
+    pdf_bytes = generate_pdf(results, params, lcoe_breakdown)
+    st.download_button(label="Download Report as PDF", data=pdf_bytes, file_name="OS4P_Report.pdf", mime="application/pdf")
 
 if __name__ == "__main__":
     main()
