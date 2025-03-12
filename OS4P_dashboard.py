@@ -98,7 +98,7 @@ def calculate_os4p(params):
     # Calculate payback period based on fee revenue from all outposts
     annual_fee_total_revenue = annual_fee_unit * num_outposts
     if annual_fee_total_revenue > 0:
-        payback_years = total_pilot_cost / annual_fee_total_revenue
+        payback_years = lifetime_debt_payment / annual_fee_total_revenue
     else:
         payback_years = float('inf')
 
