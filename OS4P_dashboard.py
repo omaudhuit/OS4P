@@ -1077,7 +1077,7 @@ def main():
     
     # Full Report PDF (aggregates all tab information)
     full_report_pdf = generate_full_pdf(results, params, lcoe_breakdown, coverage_info, sensitivity_results)
-    st.download_button(label="Export Full Report", data=full_report_pdf, file_name="OS4P_Full_Report.pdf", mime="application/pdf")
+    st.download_button(label="Download Full Report", data=full_report_pdf, file_name="OS4P_Full_Report.pdf", mime="application/pdf")
 
 if __name__ == "__main__":
     main()
