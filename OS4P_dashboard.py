@@ -465,7 +465,7 @@ def main():
     with st.sidebar:
         st.header("User Inputs")
         st.subheader("System Configuration")
-        num_outposts = st.number_input("Number of Outposts - Autonomous OS4P", min_value=1, max_value=1000, value=12, step=1, format="%d")
+        num_outposts = st.number_input("Number of Outposts - Autonomous OS4P", min_value=1, max_value=1000, value=100, step=1, format="%d")
         
         st.subheader("Vessel Count - Manned Scenario")
         num_large_patrol_boats = st.number_input("Number of Large Patrol Boats", min_value=0, max_value=10, value=1, step=1, format="%d")
@@ -491,7 +491,7 @@ def main():
         co2_factor = st.number_input("CO₂ Factor (kg CO₂ per liter)", min_value=0.5, max_value=5.0, value=2.63, step=0.1, format="%.1f")
         
         st.subheader("Financial Parameters")
-        interest_rate = st.number_input("Interest Rate (%)", min_value=1.0, max_value=15.0, value=5.0, step=0.1, format="%.1f")
+        interest_rate = st.number_input("Interest Rate (%)", min_value=1.0, max_value=15.0, value=4.2, step=0.1, format="%.1f")
         loan_years = st.number_input("Project Loan Years (for financial calculations)", min_value=3, max_value=25, value=10, step=1, format="%d")
         sla_premium = st.number_input("SLA Premium (%)", min_value=0.0, max_value=50.0, value=10.0, step=1.0, format="%.1f")
         non_unit_cost_pct = st.number_input("Non-unit Cost (%)", min_value=0.0, max_value=100.0, value=10.0, step=0.1, format="%.1f")
