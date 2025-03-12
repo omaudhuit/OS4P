@@ -605,6 +605,21 @@ def main():
 
     
     with tab_overview:
+        
+        # --- New Section: Coverage Calculation --- 
+        st.subheader("Coverage Calculation")
+        st.markdown("The following inputs define the areas that need to be covered. The **coverage area per OS4P unit** is based on the specifications of the Drone system used.")
+        land_borders = st.number_input("Enter area for Land Borders (km²)", value=500, min_value=0, step=1)
+        territorial_waters = st.number_input("Enter area for Territorial Waters (km²)", value=40000, min_value=0, step=1)
+        forest_area = st.number_input("Enter area for Forest Area (km²)", value=2000, min_value=0, step=1)
+        total_area = land_borders + territorial_waters + forest_area
+        coverage_per_unit = st.number_input("Enter coverage area per OS4P unit (km²)", value=30, min_value=1, step=1)
+        required_units = int(np.ceil(total_area / coverage_per_unit))
+        st.markdown(f"**Total area to cover: {total_area} km²**")
+        st.markdown(f"**Coverage area per OS4P unit (based on the Drone system specifications): {coverage_per_unit} km²**")
+        st.markdown(f"**Required OS4P Units: {required_units}**")
+        
+        
         st.subheader("Environmental Impact")
         col1, col2, col3 = st.columns(3)
         with col1:
@@ -660,18 +675,6 @@ def main():
             st.markdown(f"<h3 style='color: {score_lifetime_color}'>Lifetime Score: {results['innovation_fund_score_lifetime']}/12</h3>", unsafe_allow_html=True)
             st.progress((results['innovation_fund_score_lifetime'] / 12))
         
-        # --- New Section: Coverage Calculation --- 
-        st.subheader("Coverage Calculation")
-        st.markdown("The following inputs define the areas that need to be covered. The **coverage area per OS4P unit** is based on the specifications of the Drone system used.")
-        land_borders = st.number_input("Enter area for Land Borders (km²)", value=500, min_value=0, step=1)
-        territorial_waters = st.number_input("Enter area for Territorial Waters (km²)", value=40000, min_value=0, step=1)
-        forest_area = st.number_input("Enter area for Forest Area (km²)", value=2000, min_value=0, step=1)
-        total_area = land_borders + territorial_waters + forest_area
-        coverage_per_unit = st.number_input("Enter coverage area per OS4P unit (km²)", value=30, min_value=1, step=1)
-        required_units = int(np.ceil(total_area / coverage_per_unit))
-        st.markdown(f"**Total area to cover: {total_area} km²**")
-        st.markdown(f"**Coverage area per OS4P unit (based on the Drone system specifications): {coverage_per_unit} km²**")
-        st.markdown(f"**Required OS4P Units: {required_units}**")
     
     with tab_financial:
         st.subheader("Financing Details")
