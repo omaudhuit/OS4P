@@ -57,7 +57,11 @@ def calculate_os4p(params):
     # Updated CO₂ Savings Calculation (Including GENSET and M/S 240 GD vehicles)
     genset_fuel_per_day = params["genset_fuel_per_hour"] * params["genset_operating_hours"]
     ms240_gd_fuel_per_day = params["num_ms240_gd_vehicles"] * params["ms240_gd_fuel_consumption"] * hours_per_day_base
-    daily_fuel_consumption = ((large_patrol_fuel + rib_fuel + small_patrol_fuel) * hours_per_day_base) + genset_fuel_per_day + ms240_gd_fuel_per_day
+    daily_fuel_consumption = (
+        (params["num_large_patrol_boats"] * large_patrol_fuel +
+         params["num_rib_boats"] * rib_fuel +
+         params["num_small_patrol_boats"] * small_patrol_fuel) * hours_per_day_base
+    ) + genset_fuel_per_day + ms240_gd_fuel_per_day
     annual_fuel_consumption = daily_fuel_consumption * operating_days_per_year
     manned_co2_emissions = annual_fuel_consumption * co2_factor
     autonomous_co2_emissions = maintenance_emissions
@@ -366,6 +370,23 @@ def create_emissions_sensitivity_chart(sensitivity_data, param_name):
     
     return fig
 
+def create_payback_period_chart(payback_years):
+    """
+    Create a gauge chart that shows the payback period in years.
+    If the payback period is infinite, the gauge will display 0.
+    """
+    display_value = payback_years if payback_years != float('inf') else 0
+    gauge_range = [0, max(10, display_value + 1)]
+    fig = go.Figure(go.Indicator(
+        mode="number+gauge",
+        value=display_value,
+        title={"text": "Payback Period (years)"},
+        gauge={'axis': {'range': gauge_range},
+               'bar': {'color': "darkblue"}}
+    ))
+    fig.update_layout(margin=dict(t=0, b=0, l=0, r=0))
+    return fig
+
 def generate_pdf(results, params, lcoe_breakdown):
     """
     Generate a PDF report that aggregates key dashboard information.
@@ -455,10 +476,14 @@ def main():
         num_outposts = st.number_input("Number of Outposts - Autonomous OS4P", min_value=1, max_value=1000, value=150, step=1, format="%d")
         
         st.subheader("Fuel Consumption (Liters per Hour) - Manned Outpost")
-        large_patrol_fuel = st.number_input("Large Patrol Boat Fuel", min_value=50, max_value=300, value=150, step=10, format="%d")
-        rib_fuel = st.number_input("RIB Boat Fuel", min_value=10, max_value=100, value=50, step=5, format="%d")
-        small_patrol_fuel = st.number_input("Small Patrol Boat Fuel", min_value=5, max_value=50, value=30, step=5, format="%d")
-        hours_per_day_base = st.number_input("Patrol Hours per Day", min_value=4, max_value=24, value=8, step=1, format="%d")
+        large_patrol_fuel = st.number_input("Large Patrol Boat Fuel (L/h)", min_value=50, max_value=300, value=150, step=10, format="%d")
+        rib_fuel = st.number_input("RIB Boat Fuel (L/h)", min_value=10, max_value=100, value=50, step=5, format="%d")
+        small_patrol_fuel = st.number_input("Small Patrol Boat Fuel (L/h)", min_value=5, max_value=50, value=30, step=5, format="%d")
+        
+        st.subheader("Boat Count")
+        num_large_patrol_boats = st.number_input("Number of Large Patrol Boats", min_value=1, max_value=10, value=1, step=1, format="%d")
+        num_rib_boats = st.number_input("Number of RIB Boats", min_value=1, max_value=10, value=1, step=1, format="%d")
+        num_small_patrol_boats = st.number_input("Number of Small Patrol Boats", min_value=1, max_value=10, value=1, step=1, format="%d")
         
         st.subheader("Additional Fuel Consumption Parameters")
         genset_fuel_per_hour = st.number_input("GENSET Fuel Consumption per Hour (L/h)", min_value=0.1, max_value=10.0, value=2.5, step=0.1, format="%.1f")
@@ -548,7 +573,10 @@ def main():
         "maintenance_opex": maintenance_opex,
         "communications_opex": communications_opex,
         "security_opex": security_opex,
-        "annual_energy_production": annual_energy_production
+        "annual_energy_production": annual_energy_production,
+        "num_large_patrol_boats": num_large_patrol_boats,
+        "num_rib_boats": num_rib_boats,
+        "num_small_patrol_boats": num_small_patrol_boats
     }
     
     if show_capex_detail:
