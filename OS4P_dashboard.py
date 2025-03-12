@@ -75,10 +75,15 @@ def calculate_os4p(params):
     annual_opex = annual_opex_per_outpost * num_outposts
     lifetime_opex = annual_opex * loan_years
     
+    # Calculate Pilot Markup and add Non-unit Cost (R&D, Software, Overheads)
     pilot_markup = total_capex * 1.25
+    non_unit_cost_pct = params.get("non_unit_cost_pct", 0)
+    non_unit_cost = pilot_markup * (non_unit_cost_pct / 100)
+    total_pilot_cost = pilot_markup + non_unit_cost
+
     grant_coverage = 0.60
-    total_grant = grant_coverage * pilot_markup
-    debt = pilot_markup - total_grant
+    total_grant = grant_coverage * total_pilot_cost
+    debt = total_pilot_cost - total_grant
 
     monthly_interest_rate = interest_rate / 100 / 12
     num_months = loan_years * 12
@@ -149,6 +154,8 @@ def calculate_os4p(params):
         "innovation_fund_score": innovation_fund_score,
         "innovation_fund_score_lifetime": innovation_fund_score_lifetime,
         "pilot_markup": pilot_markup,
+        "non_unit_cost": non_unit_cost,
+        "total_pilot_cost": total_pilot_cost,
         "total_grant": total_grant,
         "debt": debt,
         "lifetime_debt_payment": lifetime_debt_payment,
@@ -390,6 +397,8 @@ def generate_pdf(results, params, lcoe_breakdown):
     pdf.cell(0, 10, "Financial Details", ln=True)
     pdf.set_font("DejaVu", "", 12)
     pdf.cell(0, 10, f"Total Pilot Cost with Markup (€): {results['pilot_markup']:,.0f}", ln=True)
+    pdf.cell(0, 10, f"Non-unit Cost (€): {results['non_unit_cost']:,.0f}", ln=True)
+    pdf.cell(0, 10, f"Total Pilot Cost (with Overhead) (€): {results['total_pilot_cost']:,.0f}", ln=True)
     pdf.cell(0, 10, f"Grant Coverage (€): {results['total_grant']:,.0f}", ln=True)
     pdf.cell(0, 10, f"Debt Financing Required (€): {results['debt']:,.0f}", ln=True)
     
@@ -435,6 +444,7 @@ def main():
         interest_rate = st.number_input("Interest Rate (%)", min_value=1.0, max_value=15.0, value=5.0, step=0.1, format="%.1f")
         loan_years = st.number_input("Project Loan Years (for financial calculations)", min_value=3, max_value=25, value=10, step=1, format="%d")
         sla_premium = st.number_input("SLA Premium (%)", min_value=0.0, max_value=50.0, value=15.0, step=1.0, format="%.1f")
+        non_unit_cost_pct = st.number_input("Non-unit Cost (%)", min_value=0.0, max_value=100.0, value=10.0, step=0.1, format="%.1f")
         
         st.subheader("Asset Lifetime")
         lifetime_years = st.number_input("OS4P Unit Lifetime (years)", min_value=1, max_value=50, value=20, step=1, format="%d")
@@ -502,6 +512,7 @@ def main():
         "interest_rate": interest_rate,
         "loan_years": loan_years,
         "sla_premium": sla_premium,
+        "non_unit_cost_pct": non_unit_cost_pct,
         "lifetime_years": lifetime_years,
         "operating_days_per_year": operating_days_per_year,
         "co2_factor": co2_factor,
@@ -639,6 +650,8 @@ def main():
         col1, col2, col3 = st.columns(3)
         with col1:
             st.metric("Total Pilot Cost with Markup (€)", f"{results['pilot_markup']:,.0f}")
+            st.metric("Non-unit Cost (€)", f"{results['non_unit_cost']:,.0f}")
+            st.metric("Total Pilot Cost (with Overhead) (€)", f"{results['total_pilot_cost']:,.0f}")
             st.metric("Grant Coverage (€)", f"{results['total_grant']:,.0f}")
             st.metric("Debt Financing Required (€)", f"{results['debt']:,.0f}")
         with col2:
