@@ -452,13 +452,17 @@ def main():
     with st.sidebar:
         st.header("User Inputs")
         st.subheader("System Configuration")
-        num_outposts = st.number_input("Number of Outposts", min_value=1, max_value=1000, value=150, step=1, format="%d")
+        num_outposts = st.number_input("Number of Outposts - Autonomous OS4P", min_value=1, max_value=1000, value=150, step=1, format="%d")
         
-        st.subheader("Fuel Consumption (Liters per Hour)")
+        st.subheader("Fuel Consumption (Liters per Hour) - Manned Outpost")
         large_patrol_fuel = st.number_input("Large Patrol Boat Fuel", min_value=50, max_value=300, value=150, step=10, format="%d")
         rib_fuel = st.number_input("RIB Boat Fuel", min_value=10, max_value=100, value=50, step=5, format="%d")
         small_patrol_fuel = st.number_input("Small Patrol Boat Fuel", min_value=5, max_value=50, value=30, step=5, format="%d")
         hours_per_day_base = st.number_input("Patrol Hours per Day", min_value=4, max_value=24, value=8, step=1, format="%d")
+        
+        st.subheader("Operational Parameters")
+        operating_days_per_year = st.number_input("Operating Days per Year", min_value=200, max_value=365, value=300, step=1, format="%d")
+        co2_factor = st.number_input("CO₂ Factor (kg CO₂ per liter)", min_value=0.5, max_value=5.0, value=2.63, step=0.1, format="%.1f")
         
         st.subheader("Additional Fuel Consumption Parameters")
         genset_fuel_per_hour = st.number_input("GENSET Fuel Consumption per Hour (L/h)", min_value=0.1, max_value=10.0, value=2.5, step=0.1, format="%.1f")
@@ -475,9 +479,7 @@ def main():
         st.subheader("Asset Lifetime")
         lifetime_years = st.number_input("OS4P Unit Lifetime (years)", min_value=1, max_value=50, value=20, step=1, format="%d")
         
-        st.subheader("Operational Parameters")
-        operating_days_per_year = st.number_input("Operating Days per Year", min_value=200, max_value=365, value=300, step=1, format="%d")
-        co2_factor = st.number_input("CO₂ Factor (kg CO₂ per liter)", min_value=0.5, max_value=5.0, value=2.63, step=0.1, format="%.1f")
+        st.subheader("OS4P Emissions")
         maintenance_emissions = st.number_input("Maintenance Emissions (kg CO₂)", min_value=500, max_value=5000, value=1594, step=10, format="%d")
         
         st.subheader("OPEX Inputs (€ per Outpost per Year)")
