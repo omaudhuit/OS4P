@@ -660,7 +660,7 @@ def main():
         with col1:
             st.metric("Total Pilot Cost with Markup (€)", f"{results['pilot_markup']:,.0f}")
             st.metric("Non-unit Cost (€)", f"{results['non_unit_cost']:,.0f}")
-            st.metric("Total Pilot Cost (with Overhead) (€)", f"{results['total_pilot_cost']:,.0f}")
+            st.metric("Total Pilot Cost (Markup + Overhead) (€)", f"{results['total_pilot_cost']:,.0f}")
             st.metric("Grant Coverage (€)", f"{results['total_grant']:,.0f}")
             st.metric("Debt Financing Required (€)", f"{results['debt']:,.0f}")
         with col2:
