@@ -233,6 +233,23 @@ def create_co2_comparison_chart(co2_data):
     )
     return fig
 
+def create_payback_period_chart(payback_years):
+    """
+    Create a gauge chart that shows the payback period in years.
+    If the payback period is infinite, the gauge will display 0.
+    """
+    display_value = payback_years if payback_years != float('inf') else 0
+    gauge_range = [0, max(10, display_value + 1)]
+    fig = go.Figure(go.Indicator(
+        mode="number+gauge",
+        value=display_value,
+        title={"text": "Payback Period (years)"},
+        gauge={'axis': {'range': gauge_range},
+               'bar': {'color': "darkblue"}}
+    ))
+    fig.update_layout(margin=dict(t=0, b=0, l=0, r=0))
+    return fig
+
 def perform_sensitivity_analysis(base_params, sensitivity_param, range_values):
     results = []
     for value in range_values:
@@ -711,6 +728,10 @@ def main():
         st.subheader("CO₂ Emissions Comparison")
         co2_chart = create_co2_comparison_chart(results["co2_factors"])
         st.plotly_chart(co2_chart)
+        
+        st.subheader("Payback Period")
+        payback_chart = create_payback_period_chart(results["payback_years"])
+        st.plotly_chart(payback_chart)
     
     with tab_sensitivity:
         st.subheader("CO₂ Emissions Sensitivity Analysis")
