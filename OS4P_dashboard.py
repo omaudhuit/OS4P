@@ -370,23 +370,6 @@ def create_emissions_sensitivity_chart(sensitivity_data, param_name):
     
     return fig
 
-def create_payback_period_chart(payback_years):
-    """
-    Create a gauge chart that shows the payback period in years.
-    If the payback period is infinite, the gauge will display 0.
-    """
-    display_value = payback_years if payback_years != float('inf') else 0
-    gauge_range = [0, max(10, display_value + 1)]
-    fig = go.Figure(go.Indicator(
-        mode="number+gauge",
-        value=display_value,
-        title={"text": "Payback Period (years)"},
-        gauge={'axis': {'range': gauge_range},
-               'bar': {'color': "darkblue"}}
-    ))
-    fig.update_layout(margin=dict(t=0, b=0, l=0, r=0))
-    return fig
-
 def generate_pdf(results, params, lcoe_breakdown):
     """
     Generate a PDF report that aggregates key dashboard information.
@@ -479,6 +462,9 @@ def main():
         large_patrol_fuel = st.number_input("Large Patrol Boat Fuel (L/h)", min_value=50, max_value=300, value=150, step=10, format="%d")
         rib_fuel = st.number_input("RIB Boat Fuel (L/h)", min_value=10, max_value=100, value=50, step=5, format="%d")
         small_patrol_fuel = st.number_input("Small Patrol Boat Fuel (L/h)", min_value=5, max_value=50, value=30, step=5, format="%d")
+        
+        # Added input for Patrol Hours per Day
+        hours_per_day_base = st.number_input("Patrol Hours per Day", min_value=4, max_value=24, value=8, step=1, format="%d")
         
         st.subheader("Boat Count")
         num_large_patrol_boats = st.number_input("Number of Large Patrol Boats", min_value=1, max_value=10, value=1, step=1, format="%d")
