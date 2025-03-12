@@ -7,7 +7,6 @@ import plotly.express as px
 from fpdf import FPDF  # pip install fpdf2
 from PIL import Image  # Added for image handling
 
-
 st.set_page_config(page_title="OS4P Green Sentinel", layout="wide")
 
 def calculate_innovation_fund_score(cost_efficiency_ratio):
@@ -64,7 +63,10 @@ def calculate_os4p(params):
     autonomous_co2_emissions = maintenance_emissions
     co2_savings_per_outpost = (manned_co2_emissions - autonomous_co2_emissions) / 1000
     co2_savings_all_outposts = co2_savings_per_outpost * num_outposts
-    co2_savings_lifetime = co2_savings_all_outposts * loan_years
+
+    # Use the user-defined unit lifetime for CO₂ savings (separate from loan_years for financials)
+    lifetime_years = params["lifetime_years"]
+    co2_savings_lifetime = co2_savings_all_outposts * lifetime_years
 
     # Financial Calculations
     total_capex_per_outpost = microgrid_capex + drones_capex + bos_capex
@@ -431,8 +433,11 @@ def main():
         
         st.subheader("Financial Parameters")
         interest_rate = st.number_input("Interest Rate (%)", min_value=1.0, max_value=15.0, value=5.0, step=0.1, format="%.1f")
-        loan_years = st.number_input("Project Lifetime (years)", min_value=3, max_value=25, value=10, step=1, format="%d")
+        loan_years = st.number_input("Project Loan Years (for financial calculations)", min_value=3, max_value=25, value=10, step=1, format="%d")
         sla_premium = st.number_input("SLA Premium (%)", min_value=0.0, max_value=50.0, value=15.0, step=1.0, format="%.1f")
+        
+        st.subheader("Asset Lifetime")
+        lifetime_years = st.number_input("OS4P Unit Lifetime (years)", min_value=1, max_value=50, value=20, step=1, format="%d")
         
         st.subheader("Operational Parameters")
         operating_days_per_year = st.number_input("Operating Days per Year", min_value=200, max_value=365, value=300, step=1, format="%d")
@@ -497,6 +502,7 @@ def main():
         "interest_rate": interest_rate,
         "loan_years": loan_years,
         "sla_premium": sla_premium,
+        "lifetime_years": lifetime_years,
         "operating_days_per_year": operating_days_per_year,
         "co2_factor": co2_factor,
         "maintenance_emissions": maintenance_emissions,
@@ -615,7 +621,7 @@ def main():
             st.markdown(f"<h3 style='color: {score_lifetime_color}'>Lifetime Score: {results['innovation_fund_score_lifetime']}/12</h3>", unsafe_allow_html=True)
             st.progress((results['innovation_fund_score_lifetime'] / 12))
         
-        # --- New Section: Coverage Calculation ---
+        # --- New Section: Coverage Calculation --- 
         st.subheader("Coverage Calculation")
         st.markdown("The following inputs define the areas that need to be covered. The **coverage area per OS4P unit** is based on the specifications of the Drone system used.")
         land_borders = st.number_input("Enter area for Land Borders (km²)", value=500, min_value=0, step=1)
