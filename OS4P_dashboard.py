@@ -336,20 +336,17 @@ def create_emissions_sensitivity_chart(sensitivity_data, param_name):
 
 def generate_pdf(results, params, lcoe_breakdown):
     """
-    Generate a PDF report that aggregates key dashboard information.
-    Uses a Unicode TrueType font (DejaVu Sans) to support non-Latin1 characters.
-    Ensure the fonts folder is at the same level as this .py file,
-    and that DejaVuSans.ttf and DejaVuSans-Bold.ttf are inside.
+    Generate a PDF report that aggregates key dashboard information (Executive Summary).
     """
     pdf = FPDF()
     pdf.unifontsubset = False  # Disable font subsetting to avoid issues
     pdf.add_page()
 
-    # Load the regular and bold fonts from the "fonts" folder
+    # Load fonts from the "fonts" folder
     pdf.add_font("DejaVu", "", "fonts/DejaVuSans.ttf", uni=True)
     pdf.add_font("DejaVu", "B", "fonts/DejaVuSans-Bold.ttf", uni=True)
 
-    # Use bold font for the header
+    # Header
     pdf.set_font("DejaVu", "B", 16)
     pdf.cell(0, 10, "“Green Sentinel” OS4P", ln=True, align="C")
     pdf.ln(10)
@@ -406,7 +403,134 @@ def generate_pdf(results, params, lcoe_breakdown):
     for index, row in lcoe_breakdown.iterrows():
         pdf.cell(0, 10, f"{row['Metric']}: {row['Value']:.2f}", ln=True)
     
-    # Output the PDF as bytes
+    pdf_bytes = pdf.output(dest="S").encode("latin1", errors="replace")
+    return pdf_bytes
+
+def generate_full_pdf(results, params, lcoe_breakdown, coverage_info, sensitivity_results):
+    """
+    Generate a full PDF report that aggregates the information presented in every tab.
+    """
+    pdf = FPDF()
+    pdf.unifontsubset = False
+    pdf.add_page()
+    pdf.add_font("DejaVu", "", "fonts/DejaVuSans.ttf", uni=True)
+    pdf.add_font("DejaVu", "B", "fonts/DejaVuSans-Bold.ttf", uni=True)
+
+    # Title
+    pdf.set_font("DejaVu", "B", 16)
+    pdf.cell(0, 10, "Full OS4P Green Sentinel Report", ln=True, align="C")
+    pdf.ln(10)
+
+    # Introduction Section
+    pdf.set_font("DejaVu", "B", 14)
+    pdf.cell(0, 10, "Introduction", ln=True)
+    pdf.set_font("DejaVu", "", 12)
+    intro_text = (
+       "The OS4P Green Sentinel project in Greece aims to reduce CO₂ emissions and enhance border security through "
+       "the deployment of Off-grid Smart Surveillance Security Sentinel Pylons (OS4P) and integrated drone systems. "
+       "The system combines renewable energy generation with autonomous surveillance to provide a sustainable, resilient solution."
+    )
+    pdf.multi_cell(0, 10, intro_text)
+    pdf.ln(5)
+
+    # Environmental & Cost Overview
+    pdf.set_font("DejaVu", "B", 14)
+    pdf.cell(0, 10, "Environmental & Cost Overview", ln=True)
+    pdf.set_font("DejaVu", "", 12)
+    overview_text = (
+       f"CO₂ Savings per Outpost (tonnes/year): {results['co2_savings_per_outpost']:.1f}\n"
+       f"Total CO₂ Savings per Year (tonnes): {results['co2_savings_all_outposts']:.1f}\n"
+       f"Lifetime CO₂ Savings (tonnes): {results['co2_savings_lifetime']:.1f}\n\n"
+       f"Total CAPEX (€): {results['total_capex']:,.0f}\n"
+       f"CAPEX per Outpost (€): {results['total_capex_per_outpost']:,.0f}\n"
+       f"Annual OPEX (€/year): {results['annual_opex']:,.0f}\n"
+       f"OPEX per Outpost (€/year): {results['annual_opex_per_outpost']:,.0f}\n"
+       f"Total Cost of Ownership (€): {results['tco']:,.0f}\n"
+       f"TCO per Outpost (€): {results['tco_per_outpost']:,.0f}\n\n"
+       f"Cost per Tonne CO₂ Saved (€/tonne/year): {results['cost_efficiency_per_ton']:.2f}\n"
+       f"Innovation Fund Score: {results['innovation_fund_score']}/12"
+    )
+    pdf.multi_cell(0, 10, overview_text)
+    pdf.ln(5)
+
+    # Coverage Calculation
+    pdf.set_font("DejaVu", "B", 14)
+    pdf.cell(0, 10, "Coverage Calculation", ln=True)
+    pdf.set_font("DejaVu", "", 12)
+    coverage_text = (
+       f"Land Borders Area (km²): {coverage_info['land_borders']}\n"
+       f"Territorial Waters Area (km²): {coverage_info['territorial_waters']}\n"
+       f"Forest Area (km²): {coverage_info['forest_area']}\n"
+       f"Total Area to Cover (km²): {coverage_info['total_area']}\n"
+       f"Coverage per OS4P Unit (km²): {coverage_info['coverage_per_unit']}\n"
+       f"Required OS4P Units: {coverage_info['required_units']}"
+    )
+    pdf.multi_cell(0, 10, coverage_text)
+    pdf.ln(5)
+
+    # Financial Details
+    pdf.set_font("DejaVu", "B", 14)
+    pdf.cell(0, 10, "Financial Details", ln=True)
+    pdf.set_font("DejaVu", "", 12)
+    financial_text = (
+       f"Total Pilot Cost with Markup (€): {results['pilot_markup']:,.0f}\n"
+       f"Grant Coverage (€): {results['total_grant']:,.0f}\n"
+       f"Debt Financing Required (€): {results['debt']:,.0f}\n"
+       f"Monthly Debt Payment (€): {results['monthly_debt_payment']:,.0f}\n"
+       f"Lifetime Debt Payment (€): {results['lifetime_debt_payment']:,.0f}\n"
+       f"Monthly Fee per Outpost (€): {results['monthly_fee_unit']:,.0f}\n"
+       f"Annual Fee per Outpost (€): {results['annual_fee_unit']:,.0f}\n"
+       f"Lifetime Total Fee (€): {results['lifetime_fee_total']:,.0f}"
+    )
+    pdf.multi_cell(0, 10, financial_text)
+    pdf.ln(5)
+
+    # CAPEX & OPEX Breakdown
+    pdf.set_font("DejaVu", "B", 14)
+    pdf.cell(0, 10, "CAPEX & OPEX Breakdown", ln=True)
+    pdf.set_font("DejaVu", "", 12)
+    pdf.cell(0, 10, "CAPEX Breakdown:", ln=True)
+    for category, amount in results["capex_breakdown"].items():
+        pdf.cell(0, 10, f"{category}: €{amount:,.0f}", ln=True)
+    pdf.ln(2)
+    pdf.cell(0, 10, "OPEX Breakdown (Annual):", ln=True)
+    for category, amount in results["opex_breakdown"].items():
+        pdf.cell(0, 10, f"{category}: €{amount:,.0f}", ln=True)
+    pdf.ln(5)
+
+    # LCOE Calculation
+    pdf.set_font("DejaVu", "B", 14)
+    pdf.cell(0, 10, "LCOE Calculation", ln=True)
+    pdf.set_font("DejaVu", "", 12)
+    lcoe_text = f"LCOE (€/kWh): {results['lcoe']:.4f}"
+    pdf.cell(0, 10, lcoe_text, ln=True)
+    pdf.ln(2)
+    pdf.cell(0, 10, "Calculation Breakdown:", ln=True)
+    for index, row in lcoe_breakdown.iterrows():
+        pdf.cell(0, 10, f"{row['Metric']}: {row['Value']:.2f}", ln=True)
+    pdf.ln(5)
+
+    # Sensitivity Analysis Summary
+    pdf.set_font("DejaVu", "B", 14)
+    pdf.cell(0, 10, "Sensitivity Analysis", ln=True)
+    pdf.set_font("DejaVu", "", 12)
+    if sensitivity_results is not None:
+        sensitivity_str = sensitivity_results.head(10).to_string(index=False)
+        pdf.multi_cell(0, 10, sensitivity_str)
+    else:
+        pdf.cell(0, 10, "No sensitivity analysis data available.", ln=True)
+    pdf.ln(5)
+
+    # Conclusion
+    pdf.set_font("DejaVu", "B", 14)
+    pdf.cell(0, 10, "Conclusion", ln=True)
+    pdf.set_font("DejaVu", "", 12)
+    conclusion_text = (
+       "The OS4P Green Sentinel project demonstrates significant potential in reducing CO₂ emissions and achieving cost efficiency. "
+       "This full report aggregates all key performance indicators, financial metrics, and system analyses that are critical for assessing the project's viability."
+    )
+    pdf.multi_cell(0, 10, conclusion_text)
+    
     pdf_bytes = pdf.output(dest="S").encode("latin1", errors="replace")
     return pdf_bytes
 
@@ -414,6 +538,9 @@ def main():
     st.title("OS4P Green Sentinel")
     st.markdown("### Configure Your OS4P System Below")
     
+    # Initialize variable to hold sensitivity analysis results
+    sensitivity_results = None
+
     with st.sidebar:
         st.header("User Inputs")
         st.subheader("System Configuration")
@@ -621,7 +748,7 @@ def main():
             st.markdown(f"<h3 style='color: {score_lifetime_color}'>Lifetime Score: {results['innovation_fund_score_lifetime']}/12</h3>", unsafe_allow_html=True)
             st.progress((results['innovation_fund_score_lifetime'] / 12))
         
-        # --- New Section: Coverage Calculation --- 
+        # Coverage Calculation Section
         st.subheader("Coverage Calculation")
         st.markdown("The following inputs define the areas that need to be covered. The **coverage area per OS4P unit** is based on the specifications of the Drone system used.")
         land_borders = st.number_input("Enter area for Land Borders (km²)", value=500, min_value=0, step=1)
@@ -633,6 +760,15 @@ def main():
         st.markdown(f"**Total area to cover: {total_area} km²**")
         st.markdown(f"**Coverage area per OS4P unit (based on the Drone system specifications): {coverage_per_unit} km²**")
         st.markdown(f"**Required OS4P Units: {required_units}**")
+        # Capture coverage info for full report
+        coverage_info = {
+            "land_borders": land_borders,
+            "territorial_waters": territorial_waters,
+            "forest_area": forest_area,
+            "total_area": total_area,
+            "coverage_per_unit": coverage_per_unit,
+            "required_units": required_units
+        }
     
     with tab_financial:
         st.subheader("Financing Details")
@@ -934,21 +1070,14 @@ def main():
             else:
                 st.warning("Please select at least one parameter group to analyze.")
     
-    # Generate PDF
-    r = interest_rate / 100
-    n = loan_years
-    CRF = (r * (1+r)**n) / ((1+r)**n - 1) if (1+r)**n - 1 != 0 else 0
-    total_capex_per_outpost = params["microgrid_capex"] + params["drones_capex"] + params["bos_capex"]
-    annualized_capex = total_capex_per_outpost * CRF
-    annual_opex_per_outpost = results["annual_opex_per_outpost"]
-    annual_energy = annual_energy_production
-    lcoe_breakdown = pd.DataFrame({
-        "Metric": ["Annualized CAPEX per Outpost (€/year)", "Annual OPEX per Outpost (€/year)", "Annual Energy Production (kWh/year)"],
-        "Value": [annualized_capex, annual_opex_per_outpost, annual_energy]
-    })
-    
+    # Generate PDFs
+    # Executive Summary PDF
     pdf_bytes = generate_pdf(results, params, lcoe_breakdown)
     st.download_button(label="Download Executive Summary", data=pdf_bytes, file_name="OS4P_Report.pdf", mime="application/pdf")
+    
+    # Full Report PDF (aggregates all tab information)
+    full_report_pdf = generate_full_pdf(results, params, lcoe_breakdown, coverage_info, sensitivity_results)
+    st.download_button(label="Export Full Report", data=full_report_pdf, file_name="OS4P_Full_Report.pdf", mime="application/pdf")
 
 if __name__ == "__main__":
     main()
