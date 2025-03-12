@@ -458,19 +458,19 @@ def main():
         st.subheader("System Configuration")
         num_outposts = st.number_input("Number of Outposts - Autonomous OS4P", min_value=1, max_value=1000, value=150, step=1, format="%d")
         
-        st.subheader("Fuel Consumption (Liters per Hour) - Manned Outpost")
+        st.subheader("Vessel Count - Manned Scenario")
+        num_large_patrol_boats = st.number_input("Number of Large Patrol Boats", min_value=1, max_value=10, value=1, step=1, format="%d")
+        num_rib_boats = st.number_input("Number of RIB Boats", min_value=1, max_value=10, value=1, step=1, format="%d")
+        num_small_patrol_boats = st.number_input("Number of Small Patrol Boats", min_value=1, max_value=10, value=1, step=1, format="%d")
+        
+        st.subheader("Fuel Consumption (Liters per Hour) - Manned Scenario")
         large_patrol_fuel = st.number_input("Large Patrol Boat Fuel (L/h)", min_value=50, max_value=300, value=150, step=10, format="%d")
         rib_fuel = st.number_input("RIB Boat Fuel (L/h)", min_value=10, max_value=100, value=50, step=5, format="%d")
         small_patrol_fuel = st.number_input("Small Patrol Boat Fuel (L/h)", min_value=5, max_value=50, value=30, step=5, format="%d")
         
         # Added input for Patrol Hours per Day
         hours_per_day_base = st.number_input("Patrol Hours per Day", min_value=4, max_value=24, value=8, step=1, format="%d")
-        
-        st.subheader("Boat Count")
-        num_large_patrol_boats = st.number_input("Number of Large Patrol Boats", min_value=1, max_value=10, value=1, step=1, format="%d")
-        num_rib_boats = st.number_input("Number of RIB Boats", min_value=1, max_value=10, value=1, step=1, format="%d")
-        num_small_patrol_boats = st.number_input("Number of Small Patrol Boats", min_value=1, max_value=10, value=1, step=1, format="%d")
-        
+               
         st.subheader("Additional Fuel Consumption Parameters")
         genset_fuel_per_hour = st.number_input("GENSET Fuel Consumption per Hour (L/h)", min_value=0.1, max_value=10.0, value=2.5, step=0.1, format="%.1f")
         genset_operating_hours = st.number_input("GENSET Operating Hours per Day", min_value=1, max_value=24, value=24, step=1, format="%d")
