@@ -456,7 +456,7 @@ def main():
     with st.sidebar:
         st.header("User Inputs")
         st.subheader("System Configuration")
-        num_outposts = st.number_input("Number of Outposts - Autonomous OS4P", min_value=1, max_value=1000, value=150, step=1, format="%d")
+        num_outposts = st.number_input("Number of Outposts - Autonomous OS4P", min_value=1, max_value=1000, value=12, step=1, format="%d")
         
         st.subheader("Vessel Count - Manned Scenario")
         num_large_patrol_boats = st.number_input("Number of Large Patrol Boats", min_value=1, max_value=10, value=1, step=1, format="%d")
