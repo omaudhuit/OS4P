@@ -54,7 +54,7 @@ def calculate_os4p(params):
     # Optional detailed CAPEX components
     detailed_capex = params.get("detailed_capex", None)
 
-    # Updated CO₂ Savings Calculation (Including GENSET and M/S 240 GD vehicles)
+    # Updated CO₂ Emissions Calculation (Including GENSET and M/S 240 GD vehicles)
     genset_fuel_per_day = params["genset_fuel_per_hour"] * params["genset_operating_hours"]
     ms240_gd_fuel_per_day = params["num_ms240_gd_vehicles"] * params["ms240_gd_fuel_consumption"] * hours_per_day_base
     daily_fuel_consumption = (
@@ -63,14 +63,21 @@ def calculate_os4p(params):
          params["num_small_patrol_boats"] * small_patrol_fuel) * hours_per_day_base
     ) + genset_fuel_per_day + ms240_gd_fuel_per_day
     annual_fuel_consumption = daily_fuel_consumption * operating_days_per_year
-    manned_co2_emissions = annual_fuel_consumption * co2_factor
-    autonomous_co2_emissions = maintenance_emissions
-    co2_savings_per_outpost = (manned_co2_emissions - autonomous_co2_emissions) / 1000
-    co2_savings_all_outposts = co2_savings_per_outpost * num_outposts
+    manned_co2_emissions = annual_fuel_consumption * co2_factor  # in kg CO₂ per year
+    autonomous_co2_emissions = maintenance_emissions  # in kg CO₂ per year
 
-    # Use the user-defined unit lifetime for CO₂ savings (separate from loan_years for financials)
+    # --- New: Split CO₂ Emission Avoidance into Absolute and Relative ---
+    # Absolute Emission Avoidance (ΔGHG_abs): total reduction (in tonnes CO₂-eq)
+    ghg_abs_avoidance_per_outpost = (manned_co2_emissions - autonomous_co2_emissions) / 1000  # per outpost (tCO₂e/year)
+    ghg_abs_avoidance_all_outposts = ghg_abs_avoidance_per_outpost * num_outposts
     lifetime_years = params["lifetime_years"]
-    co2_savings_lifetime = co2_savings_all_outposts * lifetime_years
+    ghg_abs_avoidance_lifetime = ghg_abs_avoidance_all_outposts * lifetime_years
+
+    # Relative GHG emission avoidance (% reduction relative to the manned scenario)
+    if manned_co2_emissions > 0:
+        ghg_rel_avoidance = ((manned_co2_emissions - autonomous_co2_emissions) / manned_co2_emissions) * 100
+    else:
+        ghg_rel_avoidance = 0
 
     # Financial Calculations
     total_capex_per_outpost = microgrid_capex + drones_capex + bos_capex
@@ -107,8 +114,8 @@ def calculate_os4p(params):
         payback_years = float('inf')
 
     # Cost Efficiency Calculation
-    cost_efficiency_per_ton = total_grant / co2_savings_all_outposts if co2_savings_all_outposts > 0 else float('inf')
-    cost_efficiency_lifetime = total_grant / co2_savings_lifetime if co2_savings_lifetime > 0 else float('inf')
+    cost_efficiency_per_ton = total_grant / ghg_abs_avoidance_all_outposts if ghg_abs_avoidance_all_outposts > 0 else float('inf')
+    cost_efficiency_lifetime = total_grant / ghg_abs_avoidance_lifetime if ghg_abs_avoidance_lifetime > 0 else float('inf')
     
     # Innovation Fund Score calculation
     innovation_fund_score = calculate_innovation_fund_score(cost_efficiency_per_ton)
@@ -143,9 +150,10 @@ def calculate_os4p(params):
             detailed_capex_breakdown[category] = value * num_outposts
 
     result = {
-        "co2_savings_per_outpost": co2_savings_per_outpost,
-        "co2_savings_all_outposts": co2_savings_all_outposts,
-        "co2_savings_lifetime": co2_savings_lifetime,
+        "ghg_abs_avoidance_per_outpost": ghg_abs_avoidance_per_outpost,
+        "ghg_abs_avoidance_all_outposts": ghg_abs_avoidance_all_outposts,
+        "ghg_abs_avoidance_lifetime": ghg_abs_avoidance_lifetime,
+        "ghg_rel_avoidance": ghg_rel_avoidance,
         "daily_fuel_consumption": daily_fuel_consumption,
         "manned_co2_emissions": manned_co2_emissions,
         "autonomous_co2_emissions": autonomous_co2_emissions,
@@ -262,10 +270,11 @@ def perform_sensitivity_analysis(base_params, sensitivity_param, range_values):
         result = calculate_os4p(params)
         results.append({
             'Parameter_Value': value,
-            'CO2_Savings_Per_Outpost': result['co2_savings_per_outpost'],
-            'CO2_Savings_All_Outposts': result['co2_savings_all_outposts'],
+            'Absolute_Avoidance_Per_Outpost': result['ghg_abs_avoidance_per_outpost'],
+            'Absolute_Avoidance_All_Outposts': result['ghg_abs_avoidance_all_outposts'],
             'Manned_CO2_Emissions': result['manned_co2_emissions'] / 1000,
             'Autonomous_CO2_Emissions': result['autonomous_co2_emissions'] / 1000,
+            'Relative_Avoidance': result['ghg_rel_avoidance'],
             'Cost_Efficiency': result['cost_efficiency_per_ton'],
             'Innovation_Fund_Score': result['innovation_fund_score']
         })
@@ -290,8 +299,8 @@ def create_sensitivity_chart(sensitivity_data, param_name, y_column, y_label):
 def create_innovation_fund_score_chart(sensitivity_data, param_name):
     innovation_scores = []
     for index, row in sensitivity_data.iterrows():
-        if row['CO2_Savings_All_Outposts'] > 0:
-            ce_ratio = 500000 / row['CO2_Savings_All_Outposts']
+        if row['Absolute_Avoidance_All_Outposts'] > 0:
+            ce_ratio = 500000 / row['Absolute_Avoidance_All_Outposts']
             score = calculate_innovation_fund_score(ce_ratio)
         else:
             score = 0
@@ -348,16 +357,16 @@ def create_emissions_sensitivity_chart(sensitivity_data, param_name):
         x=sensitivity_data['Parameter_Value'],
         y=sensitivity_data['Manned_CO2_Emissions'],
         mode='lines',
-        name='CO2 Savings',
+        name='Emission Avoidance',
         fill='tonexty',
         fillcolor='rgba(0, 255, 0, 0.2)',
         line=dict(width=0)
     ))
     
     fig.update_layout(
-        title=f'CO2 Emissions Sensitivity to {param_name}',
+        title=f'CO₂ Emissions Sensitivity to {param_name}',
         xaxis_title=param_name,
-        yaxis_title='CO2 Emissions (tonnes/year)',
+        yaxis_title='CO₂ Emissions (tonnes/year)',
         hovermode="x unified",
         legend=dict(
             orientation="h",
@@ -393,11 +402,11 @@ def generate_pdf(results, params, lcoe_breakdown):
     pdf.cell(0, 10, "Executive Summary", ln=True)
     pdf.set_font("DejaVu", "", 12)
     intro_text = (
-        "The Green Sentinel (OS4P) project in Greece aims to significantly reduce CO₂ emissions through the deployment of Offgrid Smart Surveillance Security Sentinel Pylons (OSPs) and the integration of drones for continuous surveillance."
-        "Renewable Energy Generation and CO₂ ReductionEach OSP unit is equipped with a 10 kWp solar photovoltaic system and a 3 kW wind turbine, collectively generating approximately 22,500 kWh of renewable energy annually. This clean energy replaces the need for diesel generators and powers autonomous drone systems that further reduce the dependency on traditional fuel consuming vessels for surveillance purposes."
-        "A full summary of the impact is detailed below"
-        "As mentioned, Drone Integration for Surveillance and Additional CO₂ Savings A critical component to the solution is the integration of AI-driven drones for 24/7 surveillance, offering a lower carbon footprint compared to more traditional surveillance vehicles (land, sea, air)."
-        "Conclusion: By combining renewable energy generation with drone-based surveillance, the Green Sentinel project not only enhances operational efficiency but also aligns with Greece's and the European Union's climate resilience and decarbonization targets, setting a benchmark for sustainable security solutions."
+        "The Green Sentinel (OS4P) project in Greece aims to significantly reduce CO₂ emissions through the deployment of Offgrid Smart Surveillance Security Sentinel Pylons (OSPs) and the integration of drones for continuous surveillance. "
+        "Renewable Energy Generation and CO₂ Reduction: Each OSP unit is equipped with renewable energy systems that replace diesel generators and power autonomous drone systems, thereby reducing greenhouse gas emissions. "
+        "A full summary of the impact is detailed below. "
+        "Drone Integration for Surveillance and Additional CO₂ Savings: AI-driven drones offer a lower carbon footprint compared to traditional surveillance vehicles. "
+        "Conclusion: By combining renewable energy with drone-based surveillance, the Green Sentinel project enhances operational efficiency and supports climate and decarbonization targets."
     )
     pdf.multi_cell(0, 10, intro_text)
     
@@ -405,10 +414,10 @@ def generate_pdf(results, params, lcoe_breakdown):
     pdf.set_font("DejaVu", "B", 14)
     pdf.cell(0, 10, "Overview Metrics", ln=True)
     pdf.set_font("DejaVu", "", 12)
-    pdf.cell(0, 10, f"CO₂ Savings per Outpost (tonnes/year): {results['co2_savings_per_outpost']:.1f}", ln=True)
-    pdf.cell(0, 10, f"Total CO₂ Savings per Year (tonnes): {results['co2_savings_all_outposts']:.1f}", ln=True)
-    pdf.cell(0, 10, f"Lifetime CO₂ Savings (tonnes): {results['co2_savings_lifetime']:.1f}", ln=True)
-    pdf.cell(0, 10, f"Cost Efficiency (€/tonne CO₂ avoided): {results['cost_efficiency_per_ton']:.2f}", ln=True)
+    pdf.cell(0, 10, f"Absolute GHG Emission Avoidance per Outpost (tCO₂e/year): {results['ghg_abs_avoidance_per_outpost']:.1f}", ln=True)
+    pdf.cell(0, 10, f"Total Absolute GHG Emission Avoidance (tCO₂e/year): {results['ghg_abs_avoidance_all_outposts']:.1f}", ln=True)
+    pdf.cell(0, 10, f"Lifetime Absolute GHG Emission Avoidance (tCO₂e): {results['ghg_abs_avoidance_lifetime']:.1f}", ln=True)
+    pdf.cell(0, 10, f"Relative GHG Emission Avoidance (%): {results['ghg_rel_avoidance']:.1f}", ln=True)
     
     pdf.ln(5)
     pdf.set_font("DejaVu", "B", 14)
@@ -599,7 +608,7 @@ def main():
         
         Problem Statement
         
-        The European Union faces increasing pressures from climate change and escalating geopolitical challenges, particularly around border security and critical infrastructure resilience. Traditional surveillance methods and power solutions for remote outposts and border checkpoints predominantly rely on diesel generators and manned patrol operations, including diesel-powered vehicles and vessels. These conventional approaches:
+        The European Union faces increasing pressures from climate change and escalating geopolitical challenges, particularly around border security and critical infrastructure resilience. Traditional surveillance methods and power solutions for remote outposts and border checkpoints predominantly rely on diesel generators and manned patrol operations. These conventional approaches:
         
          - Contribute significantly to greenhouse gas emissions, exacerbating climate change impacts.
          - Suffer from logistical vulnerabilities, such as fuel supply disruptions in conflict-prone or extreme weather-affected regions.
@@ -637,11 +646,13 @@ def main():
         st.subheader("Environmental Impact")
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.metric("CO₂ Savings per Outpost (tonnes/year)", f"{results['co2_savings_per_outpost']:.1f}")
+            st.metric("Absolute GHG Emission Avoidance per Outpost (tCO₂e/year)", f"{results['ghg_abs_avoidance_per_outposts'] if 'ghg_abs_avoidance_per_outposts' in results else results['ghg_abs_avoidance_per_outpost']:.1f}")
         with col2:
-            st.metric("Total CO₂ Savings per Year (tonnes)", f"{results['co2_savings_all_outposts']:.1f}")
+            st.metric("Total Absolute GHG Emission Avoidance (tCO₂e/year)", f"{results['ghg_abs_avoidance_all_outposts']:.1f}")
         with col3:
-            st.metric("Lifetime CO₂ Savings (tonnes)", f"{results['co2_savings_lifetime']:.1f}")
+            st.metric("Lifetime Absolute GHG Emission Avoidance (tCO₂e)", f"{results['ghg_abs_avoidance_lifetime']:.1f}")
+        
+        st.metric("Relative GHG Emission Avoidance (%)", f"{results['ghg_rel_avoidance']:.1f}")
         
         st.subheader("Cost Overview")
         col1, col2, col3 = st.columns(3)
@@ -754,7 +765,7 @@ def main():
     
     with tab_sensitivity:
         st.subheader("CO₂ Emissions Sensitivity Analysis")
-        st.markdown("Select a parameter to analyze its impact on CO₂ emissions:")
+        st.markdown("Select a parameter to analyze its impact on GHG emission avoidance:")
         
         sensitivity_param_options = {
             "large_patrol_fuel": "Large Patrol Boat Fuel (L/h)",
@@ -806,22 +817,23 @@ def main():
                 st.markdown("#### Sensitivity Analysis Results:")
                 st.dataframe(sensitivity_results.style.format({
                     'Parameter_Value': '{:.2f}' if selected_param == "co2_factor" else '{:.0f}',
-                    'CO2_Savings_Per_Outpost': '{:.2f}', 
-                    'CO2_Savings_All_Outposts': '{:.2f}',
+                    'Absolute_Avoidance_Per_Outpost': '{:.2f}', 
+                    'Absolute_Avoidance_All_Outposts': '{:.2f}',
                     'Manned_CO2_Emissions': '{:.2f}',
-                    'Autonomous_CO2_Emissions': '{:.2f}'
+                    'Autonomous_CO2_Emissions': '{:.2f}',
+                    'Relative_Avoidance': '{:.2f}'
                 }))
         
         st.markdown("#### Sensitivity Analysis Visualizations")
         col1, col2 = st.columns(2)
         with col1:
-            co2_savings_chart = create_sensitivity_chart(
+            avoidance_chart = create_sensitivity_chart(
                 sensitivity_results, 
                 sensitivity_param_options[selected_param],
-                'CO2_Savings_All_Outposts', 
-                'Total CO₂ Savings (tonnes/year)'
+                'Absolute_Avoidance_All_Outposts', 
+                'Total Absolute GHG Emission Avoidance (tCO₂e/year)'
             )
-            st.plotly_chart(co2_savings_chart, use_container_width=True)
+            st.plotly_chart(avoidance_chart, use_container_width=True)
         with col2:
             emissions_chart = create_emissions_sensitivity_chart(
                 sensitivity_results,
@@ -859,7 +871,7 @@ def main():
         if st.button("Run Multi-Parameter Analysis"):
             tornado_data = []
             base_result = calculate_os4p(params)
-            base_savings = base_result['co2_savings_all_outposts']
+            base_avoidance = base_result['ghg_abs_avoidance_all_outposts']
             
             if analyze_patrol_fuel:
                 params_high = params.copy()
@@ -870,8 +882,8 @@ def main():
                 low_result = calculate_os4p(params_low)
                 tornado_data.append({
                     'Parameter': 'Large Patrol Fuel',
-                    'Low_Value': low_result['co2_savings_all_outposts'] - base_savings,
-                    'High_Value': high_result['co2_savings_all_outposts'] - base_savings
+                    'Low_Value': low_result['ghg_abs_avoidance_all_outposts'] - base_avoidance,
+                    'High_Value': high_result['ghg_abs_avoidance_all_outposts'] - base_avoidance
                 })
                 params_high = params.copy()
                 params_high['rib_fuel'] = params['rib_fuel'] * (1 + variation_pct/100)
@@ -881,8 +893,8 @@ def main():
                 low_result = calculate_os4p(params_low)
                 tornado_data.append({
                     'Parameter': 'RIB Fuel',
-                    'Low_Value': low_result['co2_savings_all_outposts'] - base_savings,
-                    'High_Value': high_result['co2_savings_all_outposts'] - base_savings
+                    'Low_Value': low_result['ghg_abs_avoidance_all_outposts'] - base_avoidance,
+                    'High_Value': high_result['ghg_abs_avoidance_all_outposts'] - base_avoidance
                 })
             
             if analyze_operations:
@@ -894,8 +906,8 @@ def main():
                 low_result = calculate_os4p(params_low)
                 tornado_data.append({
                     'Parameter': 'Operating Days',
-                    'Low_Value': low_result['co2_savings_all_outposts'] - base_savings,
-                    'High_Value': high_result['co2_savings_all_outposts'] - base_savings
+                    'Low_Value': low_result['ghg_abs_avoidance_all_outposts'] - base_avoidance,
+                    'High_Value': high_result['ghg_abs_avoidance_all_outposts'] - base_avoidance
                 })
                 params_high = params.copy()
                 params_high['hours_per_day_base'] = min(24, int(params['hours_per_day_base'] * (1 + variation_pct/100)))
@@ -905,8 +917,8 @@ def main():
                 low_result = calculate_os4p(params_low)
                 tornado_data.append({
                     'Parameter': 'Hours per Day',
-                    'Low_Value': low_result['co2_savings_all_outposts'] - base_savings,
-                    'High_Value': high_result['co2_savings_all_outposts'] - base_savings
+                    'Low_Value': low_result['ghg_abs_avoidance_all_outposts'] - base_avoidance,
+                    'High_Value': high_result['ghg_abs_avoidance_all_outposts'] - base_avoidance
                 })
             
             if analyze_emissions:
@@ -918,8 +930,8 @@ def main():
                 low_result = calculate_os4p(params_low)
                 tornado_data.append({
                     'Parameter': 'CO₂ Factor',
-                    'Low_Value': low_result['co2_savings_all_outposts'] - base_savings,
-                    'High_Value': high_result['co2_savings_all_outposts'] - base_savings
+                    'Low_Value': low_result['ghg_abs_avoidance_all_outposts'] - base_avoidance,
+                    'High_Value': high_result['ghg_abs_avoidance_all_outposts'] - base_avoidance
                 })
                 params_high = params.copy()
                 params_high['maintenance_emissions'] = params['maintenance_emissions'] * (1 + variation_pct/100)
@@ -929,8 +941,8 @@ def main():
                 low_result = calculate_os4p(params_low)
                 tornado_data.append({
                     'Parameter': 'Maintenance Emissions',
-                    'Low_Value': low_result['co2_savings_all_outposts'] - base_savings,
-                    'High_Value': high_result['co2_savings_all_outposts'] - base_savings
+                    'Low_Value': low_result['ghg_abs_avoidance_all_outposts'] - base_avoidance,
+                    'High_Value': high_result['ghg_abs_avoidance_all_outposts'] - base_avoidance
                 })
             
             if tornado_data:
@@ -953,8 +965,8 @@ def main():
                     marker=dict(color='#ff9999')
                 ))
                 fig.update_layout(
-                    title='Tornado Chart: Impact on CO₂ Savings (±{0}% parameter variation)'.format(variation_pct),
-                    xaxis_title='Change in CO₂ Savings (tonnes/year)',
+                    title='Tornado Chart: Impact on Absolute GHG Emission Avoidance (±{0}% parameter variation)'.format(variation_pct),
+                    xaxis_title='Change in Absolute GHG Emission Avoidance (tCO₂e/year)',
                     barmode='overlay',
                     legend=dict(
                         orientation="h",
@@ -967,17 +979,17 @@ def main():
                 st.plotly_chart(fig, use_container_width=True)
                 st.markdown(f"""
                 ### Interpretation:
-                - This chart shows how sensitive CO₂ savings are to changes in each parameter.
+                - This chart shows how sensitive absolute GHG emission avoidance is to changes in each parameter.
                 - Longer bars indicate parameters with greater impact.
                 - Blue bars show impact when the parameter increases by {variation_pct}%.
                 - Red bars show impact when the parameter decreases by {variation_pct}%.
                 """)
                 st.subheader("Parameter Elasticity")
                 st.markdown("""
-                This measures how responsive CO₂ savings are to a 1% change in each parameter.
+                This measures how responsive GHG emission avoidance is to a 1% change in each parameter.
                 Higher absolute values indicate more influential parameters.
                 """)
-                tornado_df['Elasticity'] = (tornado_df['High_Value'] / base_savings) / (variation_pct/100)
+                tornado_df['Elasticity'] = (tornado_df['High_Value'] / base_avoidance) / (variation_pct/100)
                 elasticity_df = tornado_df[['Parameter', 'Elasticity']].sort_values('Elasticity', ascending=False, key=abs)
                 st.dataframe(elasticity_df.style.format({'Elasticity': '{:.3f}'}))
             else:
