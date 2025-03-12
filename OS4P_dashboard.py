@@ -95,6 +95,13 @@ def calculate_os4p(params):
     annual_fee_unit = monthly_fee_unit * 12
     lifetime_fee_total = annual_fee_unit * num_outposts * loan_years
 
+    # Calculate payback period based on fee revenue from all outposts
+    annual_fee_total_revenue = annual_fee_unit * num_outposts
+    if annual_fee_total_revenue > 0:
+        payback_years = total_pilot_cost / annual_fee_total_revenue
+    else:
+        payback_years = float('inf')
+
     # Cost Efficiency Calculation
     cost_efficiency_per_ton = total_grant / co2_savings_all_outposts if co2_savings_all_outposts > 0 else float('inf')
     cost_efficiency_lifetime = total_grant / co2_savings_lifetime if co2_savings_lifetime > 0 else float('inf')
@@ -160,6 +167,7 @@ def calculate_os4p(params):
         "debt": debt,
         "lifetime_debt_payment": lifetime_debt_payment,
         "lcoe": lcoe,
+        "payback_years": payback_years,
         "capex_breakdown": capex_breakdown,
         "opex_breakdown": {
             "Maintenance": maintenance_opex * num_outposts,
@@ -401,6 +409,7 @@ def generate_pdf(results, params, lcoe_breakdown):
     pdf.cell(0, 10, f"Total Pilot Cost (with Overhead) (€): {results['total_pilot_cost']:,.0f}", ln=True)
     pdf.cell(0, 10, f"Grant Coverage (€): {results['total_grant']:,.0f}", ln=True)
     pdf.cell(0, 10, f"Debt Financing Required (€): {results['debt']:,.0f}", ln=True)
+    pdf.cell(0, 10, f"Payback Period (years): {results['payback_years']:.1f}", ln=True)
     
     pdf.ln(5)
     pdf.set_font("DejaVu", "B", 14)
@@ -441,12 +450,10 @@ def main():
         ms240_gd_fuel_consumption = st.number_input("M/S 240 GD Patrol Vehicle Fuel Consumption (L/h)", min_value=50, max_value=300, value=150, step=10, format="%d")
         
         st.subheader("Financial Parameters")
-        non_unit_cost_pct = st.number_input("Non-unit Cost (%)", min_value=0.0, max_value=100.0, value=25.0, step=0.1, format="%.1f")
         interest_rate = st.number_input("Interest Rate (%)", min_value=1.0, max_value=15.0, value=5.0, step=0.1, format="%.1f")
         loan_years = st.number_input("Project Loan Years (for financial calculations)", min_value=3, max_value=25, value=10, step=1, format="%d")
-        
-        st.subheader("Sales Parameters")
         sla_premium = st.number_input("SLA Premium (%)", min_value=0.0, max_value=50.0, value=15.0, step=1.0, format="%.1f")
+        non_unit_cost_pct = st.number_input("Non-unit Cost (%)", min_value=0.0, max_value=100.0, value=10.0, step=0.1, format="%.1f")
         
         st.subheader("Asset Lifetime")
         lifetime_years = st.number_input("OS4P Unit Lifetime (years)", min_value=1, max_value=50, value=20, step=1, format="%d")
@@ -664,21 +671,8 @@ def main():
             st.metric("Annual Fee per Outpost (€)", f"{results['annual_fee_unit']:,.0f}")
             st.metric("Lifetime Total Fee (€)", f"{results['lifetime_fee_total']:,.0f}")
         
-        st.subheader("CAPEX Breakdown")
-        if "detailed_capex_breakdown" in results:
-            detailed_capex_df = pd.DataFrame.from_dict(results["detailed_capex_breakdown"], orient='index', columns=["Amount (€)"])
-            detailed_capex_df["Percentage"] = (detailed_capex_df["Amount (€)"] / detailed_capex_df["Amount (€)"].sum() * 100).round(1).astype(str) + '%'
-            st.dataframe(detailed_capex_df)
-            st.markdown("**Detailed CAPEX Breakdown**")
-        else:
-            capex_df = pd.DataFrame.from_dict(results["capex_breakdown"], orient='index', columns=["Amount (€)"])
-            capex_df["Percentage"] = (capex_df["Amount (€)"] / capex_df["Amount (€)"].sum() * 100).round(1).astype(str) + '%'
-            st.dataframe(capex_df)
-        
-        st.subheader("Annual OPEX Breakdown")
-        opex_df = pd.DataFrame.from_dict(results["opex_breakdown"], orient='index', columns=["Amount (€)"])
-        opex_df["Percentage"] = (opex_df["Amount (€)"] / opex_df["Amount (€)"].sum() * 100).round(1).astype(str) + '%'
-        st.dataframe(opex_df)
+        st.markdown("#### Payback Analysis")
+        st.metric("Payback Period (years)", f"{results['payback_years']:.1f}")
     
     with tab_lcoe:
         st.header("LCOE Calculation")
