@@ -7,6 +7,13 @@ import plotly.express as px
 from fpdf import FPDF  # pip install fpdf2
 from PIL import Image  # Added for image handling
 
+# Set the page title
+st.set_page_config(page_title="Welcome Video", layout="wide")
+
+# Display the video on startup
+st.video("OS4P.mp4")
+
+
 st.set_page_config(page_title="OS4P Green Sentinel", layout="wide")
 
 def calculate_innovation_fund_score(cost_efficiency_ratio):
