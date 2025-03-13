@@ -10,20 +10,42 @@ from PIL import Image  # Added for image handling
 st.set_page_config(page_title="OS4P Green Sentinel", layout="wide")
 
 
+# Initialize session state variable if not already set
 if "video_viewed" not in st.session_state:
     st.session_state["video_viewed"] = False
 
-# ---------------------- Video Playback on Startup ---------------------- #
-# If the user hasn’t confirmed that they’ve watched the video, show the video and a checkbox.
-if not st.session_state.get("video_viewed", False):
-    st.video("OS4P.mp4")
-    if st.checkbox("I have watched the video and want to continue."):
-        st.session_state["video_viewed"] = True
+# Check URL query parameters for video completion flag
+query_params = st.experimental_get_query_params()
+if "video_viewed" in query_params and query_params["video_viewed"][0] == "true":
+    st.session_state["video_viewed"] = True
 
-# From here on, the rest of your app is shown only if the video has been watched.
-if st.session_state.get("video_viewed", False):
-    st.title("OS4P Green Sentinel")
-    st.markdown("### Configure Your OS4P System Below")
+# If the video hasn't been viewed, display it and wait until it finishes
+if not st.session_state.get("video_viewed", False):
+    video_html = """
+    <html>
+      <body>
+        <video id="video" width="100%" controls autoplay>
+          <source src="OS4P.mp4" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+        <script>
+          var video = document.getElementById('video');
+          video.onended = function(){
+              // Redirect to the same URL with a query parameter to indicate video completion
+              var currentUrl = window.location.href.split('?')[0];
+              window.location.href = currentUrl + "?video_viewed=true";
+          };
+        </script>
+      </body>
+    </html>
+    """
+    components.html(video_html, height=400)
+    st.stop()  # Stop further execution until the video is done
+
+# Once the video has finished, the rest of your app is executed
+st.title("OS4P Green Sentinel")
+st.markdown("### Configure Your OS4P System Below")
+
     # ---------------------- Application Code Below ---------------------- #
 
 
