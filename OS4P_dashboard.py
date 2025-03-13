@@ -46,6 +46,9 @@ if not st.session_state.get("video_viewed", False):
 st.title("OS4P Green Sentinel")
 st.markdown("### Configure Your OS4P System Below")
 
+# ... (The rest of your dashboard code goes here) ...
+
+
 def calculate_innovation_fund_score(cost_efficiency_ratio):
     """
     Calculate Innovation Fund score based on cost efficiency ratio
