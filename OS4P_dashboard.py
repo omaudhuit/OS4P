@@ -15,7 +15,7 @@ if "video_viewed" not in st.session_state:
     st.session_state["video_viewed"] = False
 
 # Check URL query parameters for video completion flag
-query_params = st.experimental_get_query_params()
+query_params = st.query_params()
 if "video_viewed" in query_params and query_params["video_viewed"][0] == "true":
     st.session_state["video_viewed"] = True
 
