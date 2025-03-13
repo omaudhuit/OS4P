@@ -570,7 +570,7 @@ def main():
     
     results = calculate_os4p(params)
     
-    # Define tabs with a new tab for the Innovation Fund Scoring Framework
+    # Define tabs with a new tab for Innovation Fund Scoring Framework
     tab_intro, tab_overview, tab_innovation, tab_financial, tab_lcoe, tab_visualizations, tab_sensitivity = st.tabs(
         ["Introduction", "Overview", "Innovation Fund Scoring Framework", "Financial Details", "LCOE Calculation", "Visualizations", "Sensitivity Analysis"]
     )
@@ -653,7 +653,6 @@ def main():
             
             *A lower cost efficiency ratio (less EUR per tonne of CO₂ saved) results in a higher score.*
             """)
-        
         col1, col2 = st.columns(2)
         with col1:
             ce_yearly = results['cost_efficiency_per_ton']
@@ -669,6 +668,42 @@ def main():
             score_lifetime_color = "green" if results['innovation_fund_score_lifetime'] >= 9 else ("orange" if results['innovation_fund_score_lifetime'] >= 6 else "red")
             st.markdown(f"<h3 style='color: {score_lifetime_color}'>Lifetime Score: {results['innovation_fund_score_lifetime']}/12</h3>", unsafe_allow_html=True)
             st.progress((results['innovation_fund_score_lifetime'] / 12))
+        
+        st.markdown("### Detailed Scoring Framework for PILOT Projects (INNOVFUND-2024-NZT-PILOTS)")
+        st.markdown("""
+        - **Degree of Innovation**
+          - Evaluates how much the project goes beyond incremental improvements (e.g. breakthrough or disruptive innovation).
+          - **Score range:** 9 to 15 points, with a weight factor of 2.
+        - **GHG Emission Avoidance Potential**
+          - **Absolute GHG Emission Avoidance:** Up to 2 points (assesses the difference between the project’s total GHG emissions and those in the reference scenario over 10 years).
+          - **Relative GHG Emission Avoidance:** Up to 5 points (based on the ratio of avoided emissions relative to the reference scenario).
+          - **Quality of the GHG Emission Avoidance Calculation and Minimum Requirements:** Scores between 3 and 5 points, ensuring the calculation is robust and meets the minimum thresholds (for instance, a minimum relative avoidance of 75% for PILOT projects).
+          - **Overall contribution:** Up to 12 points.
+        - **Project Maturity**
+          - Considers three sub-criteria:
+            - **Technical Maturity:** 3 to 5 points, reflecting the feasibility and technological readiness.
+            - **Financial Maturity:** 3 to 5 points, assessing the ability to reach financial close (including managing construction costs and potential cash flow challenges).
+            - **Operational Maturity:** 3 to 5 points, evaluating the project’s implementation plan, track record, and risk mitigation strategies.
+          - **Combined contribution:** Up to 15 points.
+        - **Replicability**
+          - Evaluated through:
+            - **Efficiency gains and multiple environmental impacts:** Up to 5 points.
+            - **Further deployment potential:** Up to 5 points.
+            - **Contribution to Europe’s industrial leadership and competitiveness:** Up to 5 points.
+          - **Total replicability:** Up to 15 points.
+        - **Cost Efficiency**
+          - Assessed by:
+            - **Cost efficiency ratio:** Up to 12 points, comparing the project’s costs relative to its GHG avoidance.
+            - **Quality of cost calculation and adherence to minimum requirements:** Scored from 1.5 to 3 points.
+          - **Total contribution:** Up to 15 points.
+        - **Bonus Points**
+          - Four bonus items available, each contributing up to 1 point.
+          - **Total bonus:** Up to 4 points.
+        - **Total Scoring**
+          - **Maximum score without bonus points:** 87.
+          - **Maximum score with bonus points:** 91.
+          - **Note:** Proposals must meet the minimum pass score for each individual criterion/sub-criterion to be considered for funding.
+        """)
     
     with tab_financial:
         st.subheader("Financing Details")
