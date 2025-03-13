@@ -10,18 +10,16 @@ from PIL import Image  # Added for image handling
 st.set_page_config(page_title="OS4P Green Sentinel", layout="wide")
 
 # ---------------------- Video Playback on Startup ---------------------- #
-if "video_viewed" not in st.session_state:
-    st.session_state["video_viewed"] = False
-
-# If video has not been viewed, show the video and a continue button.
-if not st.session_state["video_viewed"]:
-    video_placeholder = st.empty()
-    video_placeholder.video("OS4P.mp4")
-    if st.button("Continue to the Application"):
+# If the user hasn’t confirmed that they’ve watched the video, show the video and a checkbox.
+if not st.session_state.get("video_viewed", False):
+    st.video("OS4P.mp4")
+    if st.checkbox("I have watched the video and want to continue."):
         st.session_state["video_viewed"] = True
-        video_placeholder.empty()  # Clear the video container
-# Else, show the main dashboard
-else:
+
+# From here on, the rest of your app is shown only if the video has been watched.
+if st.session_state.get("video_viewed", False):
+    st.title("OS4P Green Sentinel")
+    st.markdown("### Configure Your OS4P System Below")
     # ---------------------- Application Code Below ---------------------- #
 
 
