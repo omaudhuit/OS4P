@@ -67,13 +67,11 @@ def calculate_os4p(params):
     autonomous_co2_emissions = maintenance_emissions  # in kg CO₂ per year
 
     # --- New: Split CO₂ Emission Avoidance into Absolute and Relative ---
-    # Absolute Emission Avoidance (ΔGHG_abs): total reduction (in tonnes CO₂-eq)
     ghg_abs_avoidance_per_outpost = (manned_co2_emissions - autonomous_co2_emissions) / 1000  # per outpost (tCO₂e/year)
     ghg_abs_avoidance_all_outposts = ghg_abs_avoidance_per_outpost * num_outposts
     lifetime_years = params["lifetime_years"]
     ghg_abs_avoidance_lifetime = ghg_abs_avoidance_all_outposts * lifetime_years
 
-    # Relative GHG emission avoidance (% reduction relative to the manned scenario)
     if manned_co2_emissions > 0:
         ghg_rel_avoidance = ((manned_co2_emissions - autonomous_co2_emissions) / manned_co2_emissions) * 100
     else:
@@ -86,7 +84,6 @@ def calculate_os4p(params):
     annual_opex = annual_opex_per_outpost * num_outposts
     lifetime_opex = annual_opex * loan_years
     
-    # Calculate Pilot Markup and add Non-unit Cost (R&D, Software, Overheads)
     pilot_markup = total_capex * 1.25
     non_unit_cost_pct = params.get("non_unit_cost_pct", 0)
     non_unit_cost = pilot_markup * (non_unit_cost_pct / 100)
@@ -106,26 +103,21 @@ def calculate_os4p(params):
     annual_fee_unit = monthly_fee_unit * 12
     lifetime_fee_total = annual_fee_unit * num_outposts * loan_years
 
-    # Calculate payback period based on fee revenue from all outposts
-    annual_fee_total_revenue = annual_fee_unit * num_outposts
-    if annual_fee_total_revenue > 0:
-        payback_years = lifetime_debt_payment / annual_fee_total_revenue
+    if annual_fee_unit * num_outposts > 0:
+        payback_years = lifetime_debt_payment / (annual_fee_unit * num_outposts)
     else:
         payback_years = float('inf')
 
-    # Cost Efficiency Calculation
     cost_efficiency_per_ton = total_grant / ghg_abs_avoidance_all_outposts if ghg_abs_avoidance_all_outposts > 0 else float('inf')
     cost_efficiency_lifetime = total_grant / ghg_abs_avoidance_lifetime if ghg_abs_avoidance_lifetime > 0 else float('inf')
     
-    # Innovation Fund Score calculation
     innovation_fund_score = calculate_innovation_fund_score(cost_efficiency_per_ton)
     innovation_fund_score_lifetime = calculate_innovation_fund_score(cost_efficiency_lifetime)
     
     tco = total_capex + lifetime_opex
     tco_per_outpost = tco / num_outposts
 
-    # LCOE Calculation (€/kWh)
-    r = interest_rate / 100  # convert to decimal
+    r = interest_rate / 100
     n = loan_years
     if (1+r)**n - 1 != 0:
         CRF = (r * (1+r)**n) / ((1+r)**n - 1)
@@ -135,14 +127,12 @@ def calculate_os4p(params):
     annual_energy = params["annual_energy_production"]
     lcoe = (annualized_capex + annual_opex_per_outpost) / annual_energy
 
-    # Prepare CAPEX breakdown
     capex_breakdown = {
         "Microgrid": microgrid_capex * num_outposts,
         "Drones": drones_capex * num_outposts,
         "BOS (Balance of System)": bos_capex * num_outposts
     }
     
-    # Prepare detailed CAPEX breakdown if available
     detailed_capex_breakdown = None
     if detailed_capex:
         detailed_capex_breakdown = {}
@@ -246,10 +236,6 @@ def create_co2_comparison_chart(co2_data):
     return fig
 
 def create_payback_period_chart(payback_years):
-    """
-    Create a gauge chart that shows the payback period in years.
-    If the payback period is infinite, the gauge will display 0.
-    """
     display_value = payback_years if payback_years != float('inf') else 0
     gauge_range = [0, max(10, display_value + 1)]
     fig = go.Figure(go.Indicator(
@@ -380,21 +366,13 @@ def create_emissions_sensitivity_chart(sensitivity_data, param_name):
     return fig
 
 def generate_pdf(results, params, lcoe_breakdown):
-    """
-    Generate a PDF report that aggregates key dashboard information.
-    Uses a Unicode TrueType font (DejaVu Sans) to support non-Latin1 characters.
-    Ensure the fonts folder is at the same level as this .py file,
-    and that DejaVuSans.ttf and DejaVuSans-Bold.ttf are inside.
-    """
     pdf = FPDF()
-    pdf.unifontsubset = False  # Disable font subsetting to avoid issues
+    pdf.unifontsubset = False
     pdf.add_page()
 
-    # Load the regular and bold fonts from the "fonts" folder
     pdf.add_font("DejaVu", "", "fonts/DejaVuSans.ttf", uni=True)
     pdf.add_font("DejaVu", "B", "fonts/DejaVuSans-Bold.ttf", uni=True)
 
-    # Use bold font for the header
     pdf.set_font("DejaVu", "B", 16)
     pdf.cell(0, 10, "“Green Sentinel” OS4P", ln=True, align="C")
     pdf.ln(10)
@@ -454,7 +432,6 @@ def generate_pdf(results, params, lcoe_breakdown):
     for index, row in lcoe_breakdown.iterrows():
         pdf.cell(0, 10, f"{row['Metric']}: {row['Value']:.2f}", ln=True)
     
-    # Output the PDF as bytes
     pdf_bytes = pdf.output(dest="S").encode("latin1", errors="replace")
     return pdf_bytes
 
@@ -477,7 +454,6 @@ def main():
         rib_fuel = st.number_input("RIB Boat Fuel (L/h)", min_value=10, max_value=100, value=50, step=5, format="%d")
         small_patrol_fuel = st.number_input("Small Patrol Boat Fuel (L/h)", min_value=5, max_value=50, value=30, step=5, format="%d")
         
-        # Added input for Patrol Hours per Day
         hours_per_day_base = st.number_input("Patrol Hours per Day", min_value=4, max_value=24, value=8, step=1, format="%d")
                
         st.subheader("Additional Fuel Consumption Parameters")
@@ -546,7 +522,6 @@ def main():
         communications_opex = st.number_input("Communications OPEX", min_value=500, max_value=1500, value=1000, step=1000, format="%d")
         security_opex = st.number_input("Security OPEX", min_value=0, max_value=1000, value=0, step=1000, format="%d")
     
-    # Prepare the parameters dict
     params = {
         "num_outposts": num_outposts,
         "large_patrol_fuel": large_patrol_fuel,
@@ -593,12 +568,11 @@ def main():
         params["drones_capex"] = drones_capex
         params["bos_capex"] = bos_capex
     
-    # Calculate results
     results = calculate_os4p(params)
     
-    # Tabs
-    tab_intro, tab_overview, tab_financial, tab_lcoe, tab_visualizations, tab_sensitivity = st.tabs(
-        ["Introduction", "Overview", "Financial Details", "LCOE Calculation", "Visualizations", "Sensitivity Analysis"]
+    # Define tabs with a new tab for the Innovation Fund Scoring Framework
+    tab_intro, tab_overview, tab_innovation, tab_financial, tab_lcoe, tab_visualizations, tab_sensitivity = st.tabs(
+        ["Introduction", "Overview", "Innovation Fund Scoring Framework", "Financial Details", "LCOE Calculation", "Visualizations", "Sensitivity Analysis"]
     )
     
     with tab_intro:
@@ -622,12 +596,10 @@ def main():
         The Green Sentinel solution involves deploying autonomous Off-grid Smart Surveillance Security Sentinel Pylons (OS4P), integrating renewable energy generation, energy storage systems, drone-based surveillance, AI-driven monitoring, and secure telecommunications.
         """)
         
-        # Load and display the OS4P image
         os4p_image = Image.open("OS4P-The Island.png")
         st.image(os4p_image, caption="OS4P Green Sentinel Installation Overview", use_container_width=True)
 
     with tab_overview:
-        # --- New Section: Coverage Calculation --- 
         st.subheader("Coverage Calculation")
         st.markdown("The following inputs define the areas that need to be covered. The **coverage area per OS4P unit** is based on the specifications of the Drone system used.")
         land_borders = st.number_input("Enter area for Land Borders (km²)", value=500, min_value=0, step=1)
@@ -643,7 +615,7 @@ def main():
         st.subheader("Environmental Impact")
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.metric("Absolute GHG Emission Avoidance per Outpost (tCO₂e/year)", f"{results['ghg_abs_avoidance_per_outposts'] if 'ghg_abs_avoidance_per_outposts' in results else results['ghg_abs_avoidance_per_outpost']:.1f}")
+            st.metric("Absolute GHG Emission Avoidance per Outpost (tCO₂e/year)", f"{results.get('ghg_abs_avoidance_per_outposts', results['ghg_abs_avoidance_per_outpost']):.1f}")
         with col2:
             st.metric("Total Absolute GHG Emission Avoidance (tCO₂e/year)", f"{results['ghg_abs_avoidance_all_outposts']:.1f}")
         with col3:
@@ -662,7 +634,8 @@ def main():
         with col3:
             st.metric("Total Cost of Ownership (€)", f"{results['tco']:,.0f}")
             st.metric("TCO per Outpost (€)", f"{results['tco_per_outpost']:,.0f}")
-        
+    
+    with tab_innovation:
         st.subheader("Efficiency Metrics & Innovation Fund Score")
         with st.expander("Innovation Fund Scoring Criteria"):
             st.markdown("""
@@ -696,7 +669,7 @@ def main():
             score_lifetime_color = "green" if results['innovation_fund_score_lifetime'] >= 9 else ("orange" if results['innovation_fund_score_lifetime'] >= 6 else "red")
             st.markdown(f"<h3 style='color: {score_lifetime_color}'>Lifetime Score: {results['innovation_fund_score_lifetime']}/12</h3>", unsafe_allow_html=True)
             st.progress((results['innovation_fund_score_lifetime'] / 12))
-        
+    
     with tab_financial:
         st.subheader("Financing Details")
         col1, col2, col3 = st.columns(3)
@@ -762,7 +735,6 @@ def main():
     with tab_sensitivity:
         st.subheader("CO₂ Emissions Sensitivity Analysis")
         
-        # Define options and settings for each parameter
         sensitivity_param_options = {
             "large_patrol_fuel": "Large Patrol Boat Fuel (L/h)",
             "rib_fuel": "RIB Boat Fuel (L/h)",
@@ -804,7 +776,6 @@ def main():
             if min_range >= max_range:
                 st.error("Minimum value must be less than maximum value!")
             else:
-                # Create a range of parameter values
                 range_values = np.linspace(min_range, max_range, int(num_steps))
                 if selected_param in ["hours_per_day_base", "operating_days_per_year"]:
                     range_values = range_values.astype(int)
@@ -861,7 +832,6 @@ def main():
                               help="Percentage variation from the base case")
         
         def calculate_impact(param):
-            """Helper function to compute the impact of varying a parameter by the given percentage."""
             params_high = params.copy()
             params_low = params.copy()
             params_high[param] = params[param] * (1 + variation_pct / 100)
@@ -942,7 +912,6 @@ def main():
             else:
                 st.warning("Please select at least one parameter group to analyze.")
     
-    # Generate PDF
     r = interest_rate / 100
     n = loan_years
     CRF = (r * (1+r)**n) / ((1+r)**n - 1) if (1+r)**n - 1 != 0 else 0
