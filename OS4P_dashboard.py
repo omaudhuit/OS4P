@@ -14,8 +14,8 @@ st.set_page_config(page_title="OS4P Green Sentinel", layout="wide")
 if "video_viewed" not in st.session_state:
     st.session_state["video_viewed"] = False
 
-# Check URL query parameters for video completion flag
-query_params = st.experimental_get_query_params()
+# Use the new st.query_params API instead of experimental_get_query_params
+query_params = st.query_params()
 if "video_viewed" in query_params and query_params["video_viewed"][0] == "true":
     st.session_state["video_viewed"] = True
 
@@ -40,7 +40,8 @@ if not st.session_state.get("video_viewed", False):
     </html>
     """
     components.html(video_html, height=400)
-    st.stop()  # Stop further execution until the video is done
+    st.stop()  # Prevent further execution until the video is finished
+
 
 # Once the video has finished, the rest of your app is executed
 st.title("OS4P Green Sentinel")
