@@ -7,14 +7,20 @@ import plotly.express as px
 from fpdf import FPDF  # pip install fpdf2
 from PIL import Image  # Added for image handling
 
-# Set the page title
-st.set_page_config(page_title="Welcome Video", layout="wide")
-
-# Display the video on startup
-st.video("OS4P.mp4")
-
-
 st.set_page_config(page_title="OS4P Green Sentinel", layout="wide")
+
+# ---------------------- Video Playback on Startup ---------------------- #
+if "video_viewed" not in st.session_state:
+    st.session_state["video_viewed"] = False
+
+if not st.session_state["video_viewed"]:
+    st.video("OS4P.mp4")
+    if st.button("Continue to the Application"):
+        st.session_state["video_viewed"] = True
+        st.experimental_rerun()
+else:
+    # ---------------------- Application Code Below ---------------------- #
+
 
 def calculate_innovation_fund_score(cost_efficiency_ratio):
     """
