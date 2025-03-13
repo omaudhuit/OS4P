@@ -66,8 +66,8 @@ def calculate_os4p(params):
     manned_co2_emissions = annual_fuel_consumption * co2_factor  # in kg CO₂ per year
     autonomous_co2_emissions = maintenance_emissions  # in kg CO₂ per year
 
-    # --- New: Split CO₂ Emission Avoidance into Absolute and Relative ---
-    ghg_abs_avoidance_per_outpost = (manned_co2_emissions - autonomous_co2_emissions) / 1000  # per outpost (tCO₂e/year)
+    # Split CO₂ Emission Avoidance into Absolute and Relative (in tonnes)
+    ghg_abs_avoidance_per_outpost = (manned_co2_emissions - autonomous_co2_emissions) / 1000
     ghg_abs_avoidance_all_outposts = ghg_abs_avoidance_per_outpost * num_outposts
     lifetime_years = params["lifetime_years"]
     ghg_abs_avoidance_lifetime = ghg_abs_avoidance_all_outposts * lifetime_years
@@ -682,7 +682,7 @@ def main():
         - **Project Maturity**
           - Considers three sub-criteria:
             - **Technical Maturity:** 3 to 5 points, reflecting the feasibility and technological readiness.
-            - **Financial Maturity:** 3 to 5 points, assessing the ability to reach financial close (including managing construction costs and potential cash flow challenges).
+            - **Financial Maturity:** 3 to 5 points, assessing the ability to reach financial close.
             - **Operational Maturity:** 3 to 5 points, evaluating the project’s implementation plan, track record, and risk mitigation strategies.
           - **Combined contribution:** Up to 15 points.
         - **Replicability**
@@ -693,17 +693,54 @@ def main():
           - **Total replicability:** Up to 15 points.
         - **Cost Efficiency**
           - Assessed by:
-            - **Cost efficiency ratio:** Up to 12 points, comparing the project’s costs relative to its GHG avoidance.
-            - **Quality of cost calculation and adherence to minimum requirements:** Scored from 1.5 to 3 points.
+            - **Cost efficiency ratio:** Up to 12 points.
+            - **Quality of the cost calculation and adherence to minimum requirements:** Scored from 1.5 to 3 points.
           - **Total contribution:** Up to 15 points.
         - **Bonus Points**
           - Four bonus items available, each contributing up to 1 point.
           - **Total bonus:** Up to 4 points.
         - **Total Scoring**
-          - **Maximum score without bonus points:** 87.
-          - **Maximum score with bonus points:** 91.
-          - **Note:** Proposals must meet the minimum pass score for each individual criterion/sub-criterion to be considered for funding.
+          - **Without bonus points:** Maximum score is 87.
+          - **With bonus points:** Maximum score is 91.
+          - **Note:** Proposals must meet the minimum pass score for each criterion/sub-criterion.
         """)
+        
+        st.markdown("### Enter Your Scores")
+        degree_innovation = st.slider("Degree of Innovation (9-15)", min_value=9, max_value=15, value=12)
+        project_maturity = st.slider("Project Maturity (0-15)", min_value=0, max_value=15, value=10)
+        replicability = st.slider("Replicability (0-15)", min_value=0, max_value=15, value=10)
+        bonus_points = st.slider("Bonus Points (0-4)", min_value=0, max_value=4, value=2)
+        
+        # Calculate GHG Emission Avoidance Potential Score based on environmental impact:
+        lifetime_years = params["lifetime_years"]
+        threshold_abs = 1000 * (lifetime_years / 10)  # threshold scales with lifetime
+        ghg_abs = results["ghg_abs_avoidance_lifetime"]
+        absolute_score = min(2, 2 * (ghg_abs / threshold_abs))
+        ghg_rel = results["ghg_rel_avoidance"]
+        relative_score = 5 if ghg_rel >= 75 else 0
+        quality_score = 0
+        if ghg_rel >= 75:
+            quality_score = 3 + 2 * min(1, (ghg_rel - 75) / 25)
+        ghg_emission_avoidance_score = absolute_score + relative_score + quality_score
+        
+        # Calculate Cost Efficiency Score: scale innovation_fund_score (0-12) to 0-15.
+        innovation_fund_score = results["innovation_fund_score"]
+        if innovation_fund_score == float('inf'):
+            cost_efficiency_score = 0
+        else:
+            cost_efficiency_score = (innovation_fund_score / 12) * 15
+        
+        # Total Innovation Fund Score Calculation:
+        total_innovation_score = (degree_innovation * 2) + ghg_emission_avoidance_score + project_maturity + replicability + cost_efficiency_score + bonus_points
+        
+        st.markdown("### Calculated Scores")
+        st.write(f"**Degree of Innovation (weighted):** {degree_innovation * 2:.1f} (Input: {degree_innovation})")
+        st.write(f"**GHG Emission Avoidance Potential:** {ghg_emission_avoidance_score:.1f} (Absolute: {absolute_score:.1f}, Relative: {relative_score}, Quality: {quality_score:.1f})")
+        st.write(f"**Project Maturity:** {project_maturity:.1f}")
+        st.write(f"**Replicability:** {replicability:.1f}")
+        st.write(f"**Cost Efficiency Score:** {cost_efficiency_score:.1f} (Calculated from cost efficiency ratio)")
+        st.write(f"**Bonus Points:** {bonus_points:.1f}")
+        st.write(f"**Total Innovation Fund Score:** {total_innovation_score:.1f} (Maximum without bonus: 87, with bonus: 91)")
     
     with tab_financial:
         st.subheader("Financing Details")
