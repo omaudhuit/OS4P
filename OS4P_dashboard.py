@@ -13,13 +13,14 @@ st.set_page_config(page_title="OS4P Green Sentinel", layout="wide")
 if "video_viewed" not in st.session_state:
     st.session_state["video_viewed"] = False
 
-if st.button("Continue to the Application"):
-    st.session_state["video_viewed"] = True
-    try:
-        st.experimental_rerun()
-    except AttributeError:
-        st.warning("Your Streamlit version does not support automatic rerun. Please refresh the page manually.")
-
+if not st.session_state["video_viewed"]:
+    st.video("OS4P.mp4")
+    if st.button("Continue to the Application"):
+        st.session_state["video_viewed"] = True
+        if hasattr(st, "experimental_rerun"):
+            st.experimental_rerun()
+        else:
+            st.warning("Your version of Streamlit does not support automatic rerun. Please refresh the page manually.")
 else:
     # ---------------------- Application Code Below ---------------------- #
 
