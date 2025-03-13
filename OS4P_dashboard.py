@@ -1,5 +1,5 @@
-import streamlit as st
-import streamlit.components.v1 as components  
+iimport streamlit as st
+import streamlit.components.v1 as components
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -10,12 +10,11 @@ from PIL import Image  # Added for image handling
 
 st.set_page_config(page_title="OS4P Green Sentinel", layout="wide")
 
-
 # Initialize session state variable if not already set
 if "video_viewed" not in st.session_state:
     st.session_state["video_viewed"] = False
 
-# Use the new st.query_params property (without calling it as a function)
+# Access query parameters using the new st.query_params property (without parentheses)
 query_params = st.query_params
 if "video_viewed" in query_params and query_params["video_viewed"][0] == "true":
     st.session_state["video_viewed"] = True
@@ -43,7 +42,9 @@ if not st.session_state.get("video_viewed", False):
     components.html(video_html, height=400)
     st.stop()  # Stop further execution until the video is finished
 
-    # ---------------------- Application Code Below ---------------------- #
+# Once the video has finished, continue with the main application
+st.title("OS4P Green Sentinel")
+st.markdown("### Configure Your OS4P System Below")
 
 
 def calculate_innovation_fund_score(cost_efficiency_ratio):
