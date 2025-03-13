@@ -24,17 +24,17 @@ if not st.session_state.get("video_viewed", False):
     video_html = """
     <html>
       <body>
-        <video id="video" width="100%" controls autoplay>
+        <video id="video" width="100%" controls autoplay muted playsinline>
           <source src="OS4P.mp4" type="video/mp4">
           Your browser does not support the video tag.
         </video>
         <script>
           var video = document.getElementById('video');
-          video.onended = function(){
-              // Redirect the parent window to the same URL with a query parameter
-              var currentUrl = window.location.href.split('?')[0];
-              window.parent.location.href = currentUrl + "?video_viewed=true";
-          };
+          video.addEventListener('ended', function(){
+              // Redirect the top window (outside the iframe) with a query parameter
+              var currentUrl = window.top.location.href.split('?')[0];
+              window.top.location.href = currentUrl + "?video_viewed=true";
+          });
         </script>
       </body>
     </html>
