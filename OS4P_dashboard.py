@@ -626,9 +626,7 @@ def main():
         os4p_image = Image.open("OS4P-The Island.png")
         st.image(os4p_image, caption="OS4P Green Sentinel Installation Overview", use_container_width=True)
 
-    
     with tab_overview:
-        
         # --- New Section: Coverage Calculation --- 
         st.subheader("Coverage Calculation")
         st.markdown("The following inputs define the areas that need to be covered. The **coverage area per OS4P unit** is based on the specifications of the Drone system used.")
@@ -641,7 +639,6 @@ def main():
         st.markdown(f"**Total area to cover: {total_area} km²**")
         st.markdown(f"**Coverage area per OS4P unit (based on the Drone system specifications): {coverage_per_unit} km²**")
         st.markdown(f"**Required OS4P Units: {required_units}**")
-        
         
         st.subheader("Environmental Impact")
         col1, col2, col3 = st.columns(3)
@@ -700,7 +697,6 @@ def main():
             st.markdown(f"<h3 style='color: {score_lifetime_color}'>Lifetime Score: {results['innovation_fund_score_lifetime']}/12</h3>", unsafe_allow_html=True)
             st.progress((results['innovation_fund_score_lifetime'] / 12))
         
-    
     with tab_financial:
         st.subheader("Financing Details")
         col1, col2, col3 = st.columns(3)
@@ -765,8 +761,8 @@ def main():
     
     with tab_sensitivity:
         st.subheader("CO₂ Emissions Sensitivity Analysis")
-        st.markdown("Select a parameter to analyze its impact on GHG emission avoidance:")
         
+        # Define options and settings for each parameter
         sensitivity_param_options = {
             "large_patrol_fuel": "Large Patrol Boat Fuel (L/h)",
             "rib_fuel": "RIB Boat Fuel (L/h)",
@@ -777,52 +773,52 @@ def main():
             "maintenance_emissions": "Maintenance Emissions (kg CO₂)"
         }
         
+        sensitivity_settings = {
+            "large_patrol_fuel": {"min": 50, "max": 300, "step": 25},
+            "rib_fuel": {"min": 10, "max": 100, "step": 10},
+            "small_patrol_fuel": {"min": 5, "max": 50, "step": 5},
+            "hours_per_day_base": {"min": 4, "max": 24, "step": 2},
+            "operating_days_per_year": {"min": 200, "max": 365, "step": 20},
+            "co2_factor": {"min": 0.5, "max": 3.0, "step": 0.25},
+            "maintenance_emissions": {"min": 500, "max": 5000, "step": 500}
+        }
+        
         col1, col2 = st.columns([2, 3])
         with col1:
             selected_param = st.selectbox(
-                "Parameter to analyze:", 
+                "Parameter to analyze:",
                 list(sensitivity_param_options.keys()),
                 format_func=lambda x: sensitivity_param_options[x]
             )
-            if selected_param == "large_patrol_fuel":
-                min_val, max_val, default_val, step = 50, 300, params[selected_param], 25
-            elif selected_param == "rib_fuel":
-                min_val, max_val, default_val, step = 10, 100, params[selected_param], 10
-            elif selected_param == "small_patrol_fuel":
-                min_val, max_val, default_val, step = 5, 50, params[selected_param], 5
-            elif selected_param == "hours_per_day_base":
-                min_val, max_val, default_val, step = 4, 24, params[selected_param], 2
-            elif selected_param == "operating_days_per_year":
-                min_val, max_val, default_val, step = 200, 365, params[selected_param], 20
-            elif selected_param == "co2_factor":
-                min_val, max_val, default_val, step = 0.5, 3.0, params[selected_param], 0.25
-            elif selected_param == "maintenance_emissions":
-                min_val, max_val, default_val, step = 500, 5000, params[selected_param], 500
+            setting = sensitivity_settings[selected_param]
+            min_val_default = setting["min"]
+            max_val_default = setting["max"]
+            step = setting["step"]
+            default_val = params.get(selected_param, min_val_default)
             
-            min_range = st.number_input("Minimum value:", value=min_val, step=step)
-            max_range = st.number_input("Maximum value:", value=max_val, step=step)
+            min_range = st.number_input("Minimum value:", value=min_val_default, step=step)
+            max_range = st.number_input("Maximum value:", value=max_val_default, step=step)
             num_steps = st.number_input("Number of data points:", value=10, min_value=5, max_value=20, step=1)
         
         with col2:
             if min_range >= max_range:
                 st.error("Minimum value must be less than maximum value!")
             else:
-                if selected_param == "co2_factor":
-                    range_values = np.linspace(min_range, max_range, int(num_steps))
-                else:
-                    range_values = np.linspace(min_range, max_range, int(num_steps))
-                    if selected_param in ["hours_per_day_base", "operating_days_per_year"]:
-                        range_values = range_values.astype(int)
+                # Create a range of parameter values
+                range_values = np.linspace(min_range, max_range, int(num_steps))
+                if selected_param in ["hours_per_day_base", "operating_days_per_year"]:
+                    range_values = range_values.astype(int)
                 sensitivity_results = perform_sensitivity_analysis(params, selected_param, range_values)
                 st.markdown("#### Sensitivity Analysis Results:")
-                st.dataframe(sensitivity_results.style.format({
+                format_dict = {
                     'Parameter_Value': '{:.2f}' if selected_param == "co2_factor" else '{:.0f}',
                     'Absolute_Avoidance_Per_Outpost': '{:.2f}', 
                     'Absolute_Avoidance_All_Outposts': '{:.2f}',
                     'Manned_CO2_Emissions': '{:.2f}',
                     'Autonomous_CO2_Emissions': '{:.2f}',
                     'Relative_Avoidance': '{:.2f}'
-                }))
+                }
+                st.dataframe(sensitivity_results.style.format(format_dict))
         
         st.markdown("#### Sensitivity Analysis Visualizations")
         col1, col2 = st.columns(2)
@@ -857,16 +853,26 @@ def main():
         
         st.subheader("Multi-Parameter Impact Analysis")
         st.markdown("Analyze the impact of multiple parameters simultaneously:")
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            analyze_patrol_fuel = st.checkbox("Patrol Boat Fuel Consumption", value=True)
-        with col2:
-            analyze_operations = st.checkbox("Operational Parameters", value=True) 
-        with col3:
-            analyze_emissions = st.checkbox("Emissions Parameters", value=True)
+        analyze_patrol_fuel = st.checkbox("Patrol Boat Fuel Consumption", value=True)
+        analyze_operations = st.checkbox("Operational Parameters", value=True)
+        analyze_emissions = st.checkbox("Emissions Parameters", value=True)
         
         variation_pct = st.slider("Parameter Variation (%)", min_value=5, max_value=50, value=20, step=5,
-                              help="How much each parameter will be varied up and down from the base case")
+                              help="Percentage variation from the base case")
+        
+        def calculate_impact(param):
+            """Helper function to compute the impact of varying a parameter by the given percentage."""
+            params_high = params.copy()
+            params_low = params.copy()
+            params_high[param] = params[param] * (1 + variation_pct / 100)
+            params_low[param] = params[param] * (1 - variation_pct / 100)
+            high_result = calculate_os4p(params_high)
+            low_result = calculate_os4p(params_low)
+            return {
+                'Parameter': sensitivity_param_options.get(param, param),
+                'Low_Value': low_result['ghg_abs_avoidance_all_outposts'] - base_avoidance,
+                'High_Value': high_result['ghg_abs_avoidance_all_outposts'] - base_avoidance
+            }
         
         if st.button("Run Multi-Parameter Analysis"):
             tornado_data = []
@@ -874,81 +880,22 @@ def main():
             base_avoidance = base_result['ghg_abs_avoidance_all_outposts']
             
             if analyze_patrol_fuel:
-                params_high = params.copy()
-                params_high['large_patrol_fuel'] = params['large_patrol_fuel'] * (1 + variation_pct/100)
-                high_result = calculate_os4p(params_high)
-                params_low = params.copy()
-                params_low['large_patrol_fuel'] = params['large_patrol_fuel'] * (1 - variation_pct/100)
-                low_result = calculate_os4p(params_low)
-                tornado_data.append({
-                    'Parameter': 'Large Patrol Fuel',
-                    'Low_Value': low_result['ghg_abs_avoidance_all_outposts'] - base_avoidance,
-                    'High_Value': high_result['ghg_abs_avoidance_all_outposts'] - base_avoidance
-                })
-                params_high = params.copy()
-                params_high['rib_fuel'] = params['rib_fuel'] * (1 + variation_pct/100)
-                high_result = calculate_os4p(params_high)
-                params_low = params.copy()
-                params_low['rib_fuel'] = params['rib_fuel'] * (1 - variation_pct/100)
-                low_result = calculate_os4p(params_low)
-                tornado_data.append({
-                    'Parameter': 'RIB Fuel',
-                    'Low_Value': low_result['ghg_abs_avoidance_all_outposts'] - base_avoidance,
-                    'High_Value': high_result['ghg_abs_avoidance_all_outposts'] - base_avoidance
-                })
+                for param in ["large_patrol_fuel", "rib_fuel"]:
+                    tornado_data.append(calculate_impact(param))
             
             if analyze_operations:
-                params_high = params.copy()
-                params_high['operating_days_per_year'] = min(365, int(params['operating_days_per_year'] * (1 + variation_pct/100)))
-                high_result = calculate_os4p(params_high)
-                params_low = params.copy()
-                params_low['operating_days_per_year'] = max(200, int(params['operating_days_per_year'] * (1 - variation_pct/100)))
-                low_result = calculate_os4p(params_low)
-                tornado_data.append({
-                    'Parameter': 'Operating Days',
-                    'Low_Value': low_result['ghg_abs_avoidance_all_outposts'] - base_avoidance,
-                    'High_Value': high_result['ghg_abs_avoidance_all_outposts'] - base_avoidance
-                })
-                params_high = params.copy()
-                params_high['hours_per_day_base'] = min(24, int(params['hours_per_day_base'] * (1 + variation_pct/100)))
-                high_result = calculate_os4p(params_high)
-                params_low = params.copy()
-                params_low['hours_per_day_base'] = max(4, int(params['hours_per_day_base'] * (1 - variation_pct/100)))
-                low_result = calculate_os4p(params_low)
-                tornado_data.append({
-                    'Parameter': 'Hours per Day',
-                    'Low_Value': low_result['ghg_abs_avoidance_all_outposts'] - base_avoidance,
-                    'High_Value': high_result['ghg_abs_avoidance_all_outposts'] - base_avoidance
-                })
+                for param in ["operating_days_per_year", "hours_per_day_base"]:
+                    tornado_data.append(calculate_impact(param))
             
             if analyze_emissions:
-                params_high = params.copy()
-                params_high['co2_factor'] = params['co2_factor'] * (1 + variation_pct/100)
-                high_result = calculate_os4p(params_high)
-                params_low = params.copy()
-                params_low['co2_factor'] = params['co2_factor'] * (1 - variation_pct/100)
-                low_result = calculate_os4p(params_low)
-                tornado_data.append({
-                    'Parameter': 'CO₂ Factor',
-                    'Low_Value': low_result['ghg_abs_avoidance_all_outposts'] - base_avoidance,
-                    'High_Value': high_result['ghg_abs_avoidance_all_outposts'] - base_avoidance
-                })
-                params_high = params.copy()
-                params_high['maintenance_emissions'] = params['maintenance_emissions'] * (1 + variation_pct/100)
-                high_result = calculate_os4p(params_high)
-                params_low = params.copy()
-                params_low['maintenance_emissions'] = params['maintenance_emissions'] * (1 - variation_pct/100)
-                low_result = calculate_os4p(params_low)
-                tornado_data.append({
-                    'Parameter': 'Maintenance Emissions',
-                    'Low_Value': low_result['ghg_abs_avoidance_all_outposts'] - base_avoidance,
-                    'High_Value': high_result['ghg_abs_avoidance_all_outposts'] - base_avoidance
-                })
+                for param in ["co2_factor", "maintenance_emissions"]:
+                    tornado_data.append(calculate_impact(param))
             
             if tornado_data:
                 tornado_df = pd.DataFrame(tornado_data)
                 tornado_df['Total_Impact'] = tornado_df['High_Value'].abs() + tornado_df['Low_Value'].abs()
                 tornado_df = tornado_df.sort_values('Total_Impact', ascending=False)
+                
                 fig = go.Figure()
                 fig.add_trace(go.Bar(
                     y=tornado_df['Parameter'],
@@ -965,7 +912,7 @@ def main():
                     marker=dict(color='#ff9999')
                 ))
                 fig.update_layout(
-                    title='Tornado Chart: Impact on Absolute GHG Emission Avoidance (±{0}% parameter variation)'.format(variation_pct),
+                    title=f'Tornado Chart: Impact on Absolute GHG Emission Avoidance (±{variation_pct}% variation)',
                     xaxis_title='Change in Absolute GHG Emission Avoidance (tCO₂e/year)',
                     barmode='overlay',
                     legend=dict(
@@ -981,15 +928,15 @@ def main():
                 ### Interpretation:
                 - This chart shows how sensitive absolute GHG emission avoidance is to changes in each parameter.
                 - Longer bars indicate parameters with greater impact.
-                - Blue bars show impact when the parameter increases by {variation_pct}%.
-                - Red bars show impact when the parameter decreases by {variation_pct}%.
+                - Blue bars show the impact when the parameter increases by {variation_pct}%.
+                - Red bars show the impact when the parameter decreases by {variation_pct}%.
                 """)
                 st.subheader("Parameter Elasticity")
                 st.markdown("""
                 This measures how responsive GHG emission avoidance is to a 1% change in each parameter.
                 Higher absolute values indicate more influential parameters.
                 """)
-                tornado_df['Elasticity'] = (tornado_df['High_Value'] / base_avoidance) / (variation_pct/100)
+                tornado_df['Elasticity'] = (tornado_df['High_Value'] / base_avoidance) / (variation_pct / 100)
                 elasticity_df = tornado_df[['Parameter', 'Elasticity']].sort_values('Elasticity', ascending=False, key=abs)
                 st.dataframe(elasticity_df.style.format({'Elasticity': '{:.3f}'}))
             else:
