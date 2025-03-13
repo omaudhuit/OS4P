@@ -1,5 +1,6 @@
 import streamlit as st
 import streamlit.components.v1 as components
+import base64
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -21,20 +22,30 @@ if "video_viewed" in query_params and query_params["video_viewed"][0] == "true":
 
 # If the video hasn't been viewed, display it and wait until it finishes
 if not st.session_state.get("video_viewed", False):
-    video_html = """
+    # Read and encode the video file as Base64
+    try:
+        with open("OS4P.mp4", "rb") as video_file:
+            video_bytes = video_file.read()
+        video_base64 = base64.b64encode(video_bytes).decode("utf-8")
+    except Exception as e:
+        st.error("Error loading video file: " + str(e))
+        st.stop()
+    
+    video_html = f"""
     <html>
       <body>
         <video id="video" width="100%" controls autoplay muted playsinline>
-          <source src="OS4P.mp4" type="video/mp4">
+          <source src="data:video/mp4;base64,{video_base64}" type="video/mp4">
           Your browser does not support the video tag.
         </video>
         <script>
+          // Use addEventListener to detect when the video ends
           var video = document.getElementById('video');
-          video.addEventListener('ended', function(){
-              // Redirect the top window (outside the iframe) with a query parameter
+          video.addEventListener('ended', function(){{
               var currentUrl = window.top.location.href.split('?')[0];
+              // Redirect the top window to trigger a reload with the query parameter
               window.top.location.href = currentUrl + "?video_viewed=true";
-          });
+          }});
         </script>
       </body>
     </html>
@@ -45,8 +56,6 @@ if not st.session_state.get("video_viewed", False):
 # Once the video has finished, continue with the main application
 st.title("OS4P Green Sentinel")
 st.markdown("### Configure Your OS4P System Below")
-
-# ... (The rest of your dashboard code goes here) ...
 
 
 def calculate_innovation_fund_score(cost_efficiency_ratio):
