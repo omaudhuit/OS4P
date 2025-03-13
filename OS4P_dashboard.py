@@ -9,6 +9,10 @@ from PIL import Image  # Added for image handling
 
 st.set_page_config(page_title="OS4P Green Sentinel", layout="wide")
 
+
+if "video_viewed" not in st.session_state:
+    st.session_state["video_viewed"] = False
+
 # ---------------------- Video Playback on Startup ---------------------- #
 # If the user hasn’t confirmed that they’ve watched the video, show the video and a checkbox.
 if not st.session_state.get("video_viewed", False):
