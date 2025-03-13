@@ -31,9 +31,9 @@ if not st.session_state.get("video_viewed", False):
         <script>
           var video = document.getElementById('video');
           video.onended = function(){
-              // Redirect to the same URL with a query parameter to indicate video completion
+              // Redirect the parent window to the same URL with a query parameter
               var currentUrl = window.location.href.split('?')[0];
-              window.location.href = currentUrl + "?video_viewed=true";
+              window.parent.location.href = currentUrl + "?video_viewed=true";
           };
         </script>
       </body>
@@ -45,7 +45,6 @@ if not st.session_state.get("video_viewed", False):
 # Once the video has finished, continue with the main application
 st.title("OS4P Green Sentinel")
 st.markdown("### Configure Your OS4P System Below")
-
 
 def calculate_innovation_fund_score(cost_efficiency_ratio):
     """
