@@ -65,9 +65,6 @@ else:
         communications_opex = params["communications_opex"]
         security_opex = params["security_opex"]
 
-        # Optional detailed CAPEX components
-        detailed_capex = params.get("detailed_capex", None)
-
         # Include the diesel generator count in fuel consumption calculation
         diesel_generator_count = params.get("number_diesel_generators", 1)
         # Updated CO₂ Emissions Calculation (Including GENSET and M/S 240 GD vehicles)
@@ -148,12 +145,6 @@ else:
             "Drones": drones_capex * num_outposts,
             "BOS (Balance of System)": bos_capex * num_outposts
         }
-        
-        detailed_capex_breakdown = None
-        if detailed_capex:
-            detailed_capex_breakdown = {}
-            for category, value in detailed_capex.items():
-                detailed_capex_breakdown[category] = value * num_outposts
 
         result = {
             "ghg_abs_avoidance_per_outpost": ghg_abs_avoidance_per_outpost,
@@ -198,24 +189,14 @@ else:
             }
         }
         
-        if detailed_capex_breakdown:
-            result["detailed_capex_breakdown"] = detailed_capex_breakdown
-        
         return result
 
-    def create_cost_breakdown_chart(capex_data, opex_data, detailed_capex=None):
-        if detailed_capex is not None:
-            capex_detailed_df = pd.DataFrame(list(detailed_capex.items()), columns=['Category', 'Value'])
-            capex_detailed_df['Type'] = 'CAPEX (Detailed)'
-            opex_df = pd.DataFrame(list(opex_data.items()), columns=['Category', 'Value'])
-            opex_df['Type'] = 'OPEX (Annual)'
-            combined_df = pd.concat([capex_detailed_df, opex_df])
-        else:
-            capex_df = pd.DataFrame(list(capex_data.items()), columns=['Category', 'Value'])
-            capex_df['Type'] = 'CAPEX'
-            opex_df = pd.DataFrame(list(opex_data.items()), columns=['Category', 'Value'])
-            opex_df['Type'] = 'OPEX (Annual)'
-            combined_df = pd.concat([capex_df, opex_df])
+    def create_cost_breakdown_chart(capex_data, opex_data):
+        capex_df = pd.DataFrame(list(capex_data.items()), columns=['Category', 'Value'])
+        capex_df['Type'] = 'CAPEX'
+        opex_df = pd.DataFrame(list(opex_data.items()), columns=['Category', 'Value'])
+        opex_df['Type'] = 'OPEX (Annual)'
+        combined_df = pd.concat([capex_df, opex_df])
         
         fig = px.bar(
             combined_df, 
