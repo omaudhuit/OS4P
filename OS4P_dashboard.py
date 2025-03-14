@@ -492,11 +492,12 @@ else:
             st.subheader("System Configuration")
             num_outposts = st.number_input("Number of Outposts - Autonomous OS4P", min_value=1, max_value=1000, value=100, step=1, format="%d")
             
-            st.subheader("Vessel Count - Manned Scenario")
+            st.subheader("Vessel/Asset Count - Manned Scenario")
             num_large_patrol_boats = st.number_input("Number of Large Patrol Boats", min_value=0, max_value=10, value=1, step=1, format="%d")
             num_rib_boats = st.number_input("Number of RIB Boats", min_value=0, max_value=10, value=1, step=1, format="%d")
             num_small_patrol_boats = st.number_input("Number of Small Patrol Boats", min_value=0, max_value=10, value=1, step=1, format="%d")
-            
+            num_ms240_gd_vehicles = st.number_input("Number of M/S 240 GD Patrol Vehicles", min_value=0, max_value=100, value=1, step=1, format="%d")
+           
             st.subheader("Fuel Consumption (Liters per Hour) - Manned Scenario")
             large_patrol_fuel = st.number_input("Large Patrol Boat Fuel (L/h)", min_value=50, max_value=300, value=150, step=10, format="%d")
             rib_fuel = st.number_input("RIB Boat Fuel (L/h)", min_value=10, max_value=100, value=50, step=5, format="%d")
@@ -505,7 +506,6 @@ else:
             hours_per_day_base = st.number_input("Patrol Hours per Day", min_value=4, max_value=24, value=8, step=1, format="%d")
                    
             st.subheader("Additional Fuel Consumption Parameters")
-            num_ms240_gd_vehicles = st.number_input("Number of M/S 240 GD Patrol Vehicles", min_value=0, max_value=100, value=1, step=1, format="%d")
             ms240_gd_fuel_consumption = st.number_input("M/S 240 GD Patrol Vehicle Fuel Consumption (L/h)", min_value=0, max_value=25, value=15, step=10, format="%d")
             diesel_generator_capex = st.number_input("Diesel Generator CAPEX (€)", min_value=10000, max_value=200000, value=50000, step=5000, format="%d")
             diesel_generator_opex = st.number_input("Diesel Generator Annual OPEX (€)", min_value=1000, max_value=20000, value=3000, step=500, format="%d")
