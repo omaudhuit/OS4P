@@ -476,7 +476,7 @@ else:
             genset_fuel_per_hour = st.number_input("GENSET Fuel Consumption per Hour (L/h)", min_value=0.1, max_value=10.0, value=2.5, step=0.1, format="%.1f")
             genset_operating_hours = st.number_input("GENSET Operating Hours per Day", min_value=1, max_value=24, value=24, step=1, format="%d")
             num_ms240_gd_vehicles = st.number_input("Number of M/S 240 GD Patrol Vehicles", min_value=0, max_value=100, value=1, step=1, format="%d")
-            ms240_gd_fuel_consumption = st.number_input("M/S 240 GD Patrol Vehicle Fuel Consumption (L/h)", min_value=50, max_value=300, value=150, step=10, format="%d")
+            ms240_gd_fuel_consumption = st.number_input("M/S 240 GD Patrol Vehicle Fuel Consumption (L/h)", min_value=0, max_value=25, value=15, step=10, format="%d")
             
             st.subheader("Operational Parameters")
             operating_days_per_year = st.number_input("Operating Days per Year", min_value=50, max_value=365, value=180, step=1, format="%d")
