@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 import plotly.express as px
 from fpdf import FPDF  # pip install fpdf2
-from PIL import Image  # Added for image handling
+from PIL import Image  # Added for image handling   
 import numpy_financial as npf  # NEW: For IRR calculation
 
 st.set_page_config(page_title="OS4P Green Sentinel", layout="wide")
