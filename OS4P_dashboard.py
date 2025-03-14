@@ -564,7 +564,13 @@ else:
                 microgrid_capex = st.number_input("Microgrid CAPEX", min_value=50000, max_value=200000, value=110000, step=5000, format="%d")
                 drones_capex = st.number_input("Drones CAPEX", min_value=20000, max_value=100000, value=60000, step=5000, format="%d")
                 bos_capex = st.number_input("BOS (Balance of System) CAPEX", min_value=10000, max_value=100000, value=40000, step=5000, format="%d")
-                
+            
+            # In the sidebar (inside with st.sidebar:), add new inputs for the diesel generator:
+            diesel_generator_capex = st.number_input("Diesel Generator CAPEX (€)", min_value=10000, max_value=200000, value=50000, step=5000, format="%d")
+            diesel_generator_opex = st.number_input("Diesel Generator Annual OPEX (€)", min_value=1000, max_value=20000, value=3000, step=500, format="%d")
+            diesel_fuel_cost = st.number_input("Diesel Fuel Cost (€/liter)", min_value=0.5, max_value=2.0, value=1.5, step=0.1, format="%.1f")
+            diesel_generator_efficiency = st.number_input("Diesel Generator Efficiency (kWh per liter)", min_value=0.1, max_value=5.0, value=2.5, step=0.1, format="%.1f")
+            
             st.subheader("OPEX Inputs (€ per Outpost per Year)")
             maintenance_opex = st.number_input("Maintenance OPEX", min_value=500, max_value=5000, value=2000, step=1000, format="%d")
             communications_opex = st.number_input("Communications OPEX", min_value=500, max_value=1500, value=1000, step=1000, format="%d")
@@ -835,6 +841,46 @@ else:
             })
             st.markdown("**Calculation Breakdown:**")
             st.table(lcoe_breakdown)
+
+            # Calculate diesel generator LCOE
+            # Calculate the Capital Recovery Factor (CRF) for both systems:
+            r = interest_rate / 100
+            n = loan_years
+            CRF = (r * (1+r)**n) / ((1+r)**n - 1) if (1+r)**n - 1 != 0 else 0
+
+            # Annualized cost components for the diesel generator:
+            annualized_capex_diesel = diesel_generator_capex * CRF
+            annual_fuel_consumption_diesel = params["genset_fuel_per_hour"] * params["genset_operating_hours"] * operating_days_per_year  # in liters/year
+            annual_fuel_cost = annual_fuel_consumption_diesel * diesel_fuel_cost
+            annual_total_cost_diesel = annualized_capex_diesel + diesel_generator_opex + annual_fuel_cost
+
+            # Estimate annual electricity production from the diesel generator (in kWh/year)
+            annual_electricity_diesel = annual_fuel_consumption_diesel * diesel_generator_efficiency
+
+            # Diesel LCOE (€/kWh)
+            lcoe_diesel = annual_total_cost_diesel / annual_electricity_diesel if annual_electricity_diesel > 0 else float('inf')
+
+            st.markdown("### Diesel Generator LCOE Calculation")
+            st.metric("Diesel Generator LCOE (€/kWh)", f"{lcoe_diesel:.4f}")
+
+            diesel_lcoe_breakdown = pd.DataFrame({
+                "Metric": [
+                    "Annualized CAPEX (€/year)",
+                    "Annual OPEX (€/year)",
+                    "Annual Fuel Cost (€/year)",
+                    "Annual Total Cost (€/year)",
+                    "Annual Electricity Production (kWh/year)"
+                ],
+                "Value": [
+                    annualized_capex_diesel,
+                    diesel_generator_opex,
+                    annual_fuel_cost,
+                    annual_total_cost_diesel,
+                    annual_electricity_diesel
+                ]
+            })
+            st.markdown("**Diesel Generator LCOE Breakdown:**")
+            st.table(diesel_lcoe_breakdown)
         
         with tab_visualizations:
             st.subheader("Cost Breakdown Visualization")
