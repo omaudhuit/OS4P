@@ -823,42 +823,89 @@ else:
         with tab_financial_model:
             st.header("Discounted Cash Flow Analysis")
             st.markdown("""
-            This analysis provides a simplified discounted cash flow (DCF) model based on the financial details.
-            It estimates the net present value (NPV) of the project's cash flows over the loan period.
-            """)
-            # Use the financial parameters already defined:
-            discount_rate = interest_rate / 100
-            years = loan_years
+            In this analysis we calculate the Net Present Value (NPV) of the project's cash flows over the loan period.
             
-            # Initial Investment: assume total CAPEX per outpost (aggregated over all outposts) is incurred at year 0.
+            **Steps in the Calculation:**
+            1. **Initial Investment**: Total CAPEX per outpost (aggregated over all outposts) is assumed to be incurred at Year 0.
+            2. **Annual Revenue**: Based on the monthly fee per outpost (annual fee = monthly fee × 12) aggregated over all outposts.
+            3. **Annual OPEX**: The annual operating expenditure is taken from financial results.
+            4. **Debt Service**: Annual debt service is calculated as the monthly debt payment multiplied by 12.
+            5. **Net Annual Cash Flow**: 
+                 Annual Cash Flow = Annual Revenue − Annual OPEX − Annual Debt Service.
+            6. **Discounting**: Each year’s net cash flow is discounted using the formula:
+                 Discounted CF = Net Annual Cash Flow / (1 + discount_rate)^(year)
+            7. **NPV**: NPV is the sum of all discounted annual cash flows (plus the negative initial investment).
+            """)
+            
+            # Financial parameters (assumed to be defined from user inputs and results)
+            discount_rate = interest_rate / 100  # Convert percent to decimal
+            years = loan_years  # Number of years in the analysis period
+            
+            # Initial Investment: Total CAPEX per outpost (aggregated over all outposts) incurred at Year 0.
             initial_investment = (params["microgrid_capex"] + params["drones_capex"] + params["bos_capex"]) * num_outposts
             
-            # Annual Revenue: assume annual fee per outpost (monthly fee * 12) aggregated over outposts.
+            # Annual Revenue: Assume annual fee per outpost aggregated over all outposts.
             annual_revenue = results["annual_fee_unit"] * 12 * num_outposts
             
-            # Annual OPEX: already calculated in results.
+            # Annual OPEX: Already calculated in results.
             annual_opex = results["annual_opex"]
             
-            # Debt Service: assume monthly debt payment aggregated over 12 months.
+            # Debt Service: Annual debt payment aggregated over 12 months.
             annual_debt_service = results["monthly_debt_payment"] * 12
             
-            # Net Annual Cash Flow:
+            # Calculate Net Annual Cash Flow.
             annual_cash_flow = annual_revenue - annual_opex - annual_debt_service
             st.metric("Annual Cash Flow (€)", f"{annual_cash_flow:,.0f}")
             
             # Discounted Cash Flow Calculation:
+            # Start with the initial investment (a cash outflow at Year 0)
             npv = -initial_investment
-            cash_flow_list = []
+            discounted_cash_flows = []  # Store discounted cash flow for each year for plotting
+            
+            # Loop over each year and discount the net cash flow.
             for t in range(1, years + 1):
                 discounted_cf = annual_cash_flow / ((1 + discount_rate) ** t)
-                cash_flow_list.append(discounted_cf)
+                discounted_cash_flows.append(discounted_cf)
                 npv += discounted_cf
+            
             st.metric("NPV (€)", f"{npv:,.0f}")
             
-            # Display the cash flows per year in a table:
+            # Prepare data for a Plotly line chart to visualize discounted cash flows.
+            # We also show the undiscounted cash flow for comparison.
+            year_list = list(range(1, years + 1))
+            undiscounted_cash_flows = [annual_cash_flow] * years
+            
+            import plotly.graph_objects as go
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                x=year_list,
+                y=undiscounted_cash_flows,
+                mode='lines+markers',
+                name='Undiscounted Cash Flow',
+                line=dict(color='blue', dash='dot')
+            ))
+            fig.add_trace(go.Scatter(
+                x=year_list,
+                y=discounted_cash_flows,
+                mode='lines+markers',
+                name='Discounted Cash Flow',
+                line=dict(color='green')
+            ))
+            
+            fig.update_layout(
+                title='Discounted Cash Flow Analysis',
+                xaxis_title='Year',
+                yaxis_title='Cash Flow (€)',
+                hovermode='x unified'
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Finally, display cash flow values in a table.
             dcf_table = pd.DataFrame({
-                "Year": list(range(1, years + 1)),
-                "Discounted Cash Flow (€)": cash_flow_list
+                "Year": year_list,
+                "Discounted Cash Flow (€)": discounted_cash_flows,
+                "Undiscounted Cash Flow (€)": undiscounted_cash_flows
             })
             st.table(dcf_table)
         
