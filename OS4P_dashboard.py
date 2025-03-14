@@ -90,7 +90,7 @@ else:
             ghg_rel_avoidance = 0
 
         # Financial Calculations
-        total_capex_per_outpost = microgrid_capex + drones_capex + bos_capex
+        total_capex_per_outpost = microgrid_capex + drones_capex
         total_capex = total_capex_per_outpost * num_outposts
         annual_opex_per_outpost = maintenance_opex + communications_opex + security_opex
         annual_opex = annual_opex_per_outpost * num_outposts
@@ -142,7 +142,6 @@ else:
         capex_breakdown = {
             "Microgrid": microgrid_capex * num_outposts,
             "Drones": drones_capex * num_outposts,
-            "BOS (Balance of System)": bos_capex * num_outposts
         }
 
         result = {
