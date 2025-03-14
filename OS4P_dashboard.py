@@ -629,8 +629,8 @@ else:
         results = calculate_os4p(params)
         
         # Define tabs with a new tab for Innovation Fund Scoring Framework
-        tab_intro, tab_overview, tab_innovation, tab_financial, tab_lcoe, tab_visualizations, tab_sensitivity = st.tabs(
-            ["Introduction", "Overview", "Innovation Fund Scoring Framework", "Financial Details", "LCOE Calculation", "Visualizations", "Sensitivity Analysis"]
+        tab_intro, tab_overview, tab_innovation, tab_financial, tab_financial_model, tab_lcoe, tab_visualizations, tab_sensitivity = st.tabs(
+            ["Introduction", "Overview", "Innovation Fund Scoring Framework", "Financial Details", "Financial Model", "LCOE Calculation", "Visualizations", "Sensitivity Analysis"]
         )
         
         with tab_intro:
@@ -819,6 +819,48 @@ else:
             
             st.markdown("#### Payback Analysis")
             st.metric("Payback Period (years)", f"{results['payback_years']:.1f}")
+        
+        with tab_financial_model:
+            st.header("Discounted Cash Flow Analysis")
+            st.markdown("""
+            This analysis provides a simplified discounted cash flow (DCF) model based on the financial details.
+            It estimates the net present value (NPV) of the project's cash flows over the loan period.
+            """)
+            # Use the financial parameters already defined:
+            discount_rate = interest_rate / 100
+            years = loan_years
+            
+            # Initial Investment: assume total CAPEX per outpost (aggregated over all outposts) is incurred at year 0.
+            initial_investment = (params["microgrid_capex"] + params["drones_capex"] + params["bos_capex"]) * num_outposts
+            
+            # Annual Revenue: assume annual fee per outpost (monthly fee * 12) aggregated over outposts.
+            annual_revenue = results["annual_fee_unit"] * 12 * num_outposts
+            
+            # Annual OPEX: already calculated in results.
+            annual_opex = results["annual_opex"]
+            
+            # Debt Service: assume monthly debt payment aggregated over 12 months.
+            annual_debt_service = results["monthly_debt_payment"] * 12
+            
+            # Net Annual Cash Flow:
+            annual_cash_flow = annual_revenue - annual_opex - annual_debt_service
+            st.metric("Annual Cash Flow (€)", f"{annual_cash_flow:,.0f}")
+            
+            # Discounted Cash Flow Calculation:
+            npv = -initial_investment
+            cash_flow_list = []
+            for t in range(1, years + 1):
+                discounted_cf = annual_cash_flow / ((1 + discount_rate) ** t)
+                cash_flow_list.append(discounted_cf)
+                npv += discounted_cf
+            st.metric("NPV (€)", f"{npv:,.0f}")
+            
+            # Display the cash flows per year in a table:
+            dcf_table = pd.DataFrame({
+                "Year": list(range(1, years + 1)),
+                "Discounted Cash Flow (€)": cash_flow_list
+            })
+            st.table(dcf_table)
         
         with tab_lcoe:
             st.header("LCOE Calculation")
