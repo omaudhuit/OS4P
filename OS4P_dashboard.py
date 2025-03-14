@@ -556,21 +556,38 @@ else:
                     min_value=5000, max_value=50000, 
                     value=15000, step=1000, format="%d"
                 )
+  
+                microgrid_equipment = solar_pv_capex + wind_turbine_capex + battery_capex + telecom_capex
+
+                # Input for Microgrid BOS (Balance of System) CAPEX
+                microgrid_transp = st.number_input(
+                    "Transportation", 
+                    min_value=5000, max_value=50000, 
+                    value=20000, step=1000, format="%d"
+                )
+
                 install_capex = st.number_input(
                     "Installation & Commissioning", 
                     min_value=5000, max_value=50000, 
                     value=12000, step=1000, format="%d"
                 )
-                microgrid_other = solar_pv_capex + wind_turbine_capex + battery_capex + telecom_capex + install_capex
 
-                # Input for Microgrid BOS (Balance of System) CAPEX
-                microgrid_bos = st.number_input(
-                    "Microgrid BOS", 
-                    min_value=5000, max_value=50000, 
-                    value=20000, step=1000, format="%d"
+                st.markdown("#### Other CAPEX")
+                bos_contin = st.number_input(
+                    "Additional BOS/CONTINGENCY CAPEX", 
+                    min_value=0, max_value=100000, 
+                    value=0, step=5000, format="%d"
                 )
-                microgrid_capex = microgrid_other + microgrid_bos
+
+                microgrid_bos = microgrid_transp + install_capex + bos_contin
+
+                microgrid_capex = microgrid_equipment + microgrid_bos
+
                 st.markdown(f"**Total Microgrid CAPEX: €{microgrid_capex:,}**")
+                
+                # (Assumes that microgrid_capex has been computed earlier from the detailed breakdown,
+                #  and that microgrid_bos is its BOS component. Define bos_capex for consistency.)
+                bos_capex = microgrid_bos  
                 
                 st.markdown("#### Drone System CAPEX Breakdown")
                 drone_units = st.number_input(
@@ -586,13 +603,7 @@ else:
                 drones_capex = drone_units * drone_unit_cost
                 st.markdown(f"**Total Drones CAPEX: €{drones_capex:,}**")
                 
-                st.markdown("#### Other CAPEX")
-                bos_capex = st.number_input(
-                    "Additional BOS/CONTINGENCY/OTHER CAPEX", 
-                    min_value=0, max_value=100000, 
-                    value=0, step=5000, format="%d"
-                )
-                total_capex_per_outpost = microgrid_capex + drones_capex + bos_capex
+                total_capex_per_outpost = microgrid_capex + drones_capex
                 st.markdown(f"**Total CAPEX per Outpost: €{total_capex_per_outpost:,}**")
             else:
                 microgrid_capex = st.number_input(
@@ -611,6 +622,7 @@ else:
                     value=40000, step=5000, format="%d"
                 )
                 total_capex_per_outpost = microgrid_capex + drones_capex + bos_capex
+                st.markdown(f"**Total CAPEX per Outpost: €{total_capex_per_outpost:,}**")
          
             st.subheader("OPEX Inputs (€ per Outpost per Year)")
             maintenance_opex = st.number_input("Maintenance OPEX", min_value=500, max_value=5000, value=2000, step=1000, format="%d")
