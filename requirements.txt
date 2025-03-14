@@ -8,3 +8,5 @@ seaborn
 uvicorn
 plotly
 fpdf
+npf
+px
