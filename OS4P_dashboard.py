@@ -630,7 +630,7 @@ else:
         
         # Define tabs with a new tab for Innovation Fund Scoring Framework
         tab_intro, tab_overview, tab_innovation, tab_financial, tab_financial_model, tab_lcoe, tab_visualizations, tab_sensitivity = st.tabs(
-            ["Introduction", "Overview", "Innovation Fund Scoring Framework", "Financial Details", "Financial Model - DCF", "LCOE Calculation", "Visualizations", "Sensitivity Analysis"]
+            ["Introduction", "Overview", "Innovation Fund Scoring Framework", "Financial Details", "Financial Model", "LCOE Calculation", "Visualizations", "Sensitivity Analysis"]
         )
         
         with tab_intro:
