@@ -672,11 +672,11 @@ else:
         
         results = calculate_os4p(params)
         
-        # Define tabs with a new tab for Innovation Fund Scoring Framework
-        tab_intro, tab_overview, tab_innovation, tab_financial, tab_financial_model, tab_lcoe, tab_visualizations, tab_sensitivity = st.tabs(
-            ["Introduction", "Overview", "Innovation Fund Scoring Framework", "Financial Details", "Financial Model", "LCOE Calculation", "Visualizations", "Sensitivity Analysis"]
+        # Define tabs with the combined Financial Analysis tab
+        tab_intro, tab_overview, tab_innovation, tab_financial, tab_lcoe, tab_visualizations, tab_sensitivity = st.tabs(
+            ["Introduction", "Overview", "Innovation Fund Scoring Framework", "Financial Analysis", "LCOE Calculation", "Visualizations", "Sensitivity Analysis"]
         )
-        
+
         with tab_intro:
             st.header("Introduction")
             st.markdown("""
@@ -842,6 +842,8 @@ else:
             st.write(f"**Total Innovation Fund Score:** {total_innovation_score:.1f} (Maximum without bonus: 87, with bonus: 91)")
 
         with tab_financial:
+            st.header("Financial Analysis")
+
             st.subheader("Financing Details")
             col1, col2, col3 = st.columns(3)
             with col1:
@@ -860,46 +862,20 @@ else:
             
             st.markdown("#### Payback Analysis")
             st.metric("Payback Period (years)", f"{results['payback_years']:.1f}")
-
-        with tab_financial_model:
-            st.header("Discounted Cash Flow Analysis")
-            st.markdown("""
-            In this analysis we calculate the Net Present Value (NPV) of the project's cash flows over the loan period.
             
-            **Steps in the Calculation:**
-            1. **Initial Investment**: Total CAPEX per outpost (aggregated over all outposts) is assumed to be incurred at Year 0.
-            2. **Annual Revenue**: Based on the monthly fee per outpost (annual fee = monthly fee × 12) aggregated over all outposts.
-            3. **Annual OPEX**: The annual operating expenditure is taken from financial results.
-            4. **Debt Service**: Annual debt service is calculated as the monthly debt payment multiplied by 12.
-            5. **Net Annual Cash Flow**: 
-                 Annual Cash Flow = Annual Revenue − Annual OPEX − Annual Debt Service.
-            6. **Discounting**: Each year’s net cash flow is discounted using the formula:
-                 Discounted CF = Net Annual Cash Flow / (1 + discount_rate)^(year)
-            7. **NPV**: NPV is the sum of all discounted annual cash flows (plus the negative initial investment).
-            """)
-            
-            # Financial parameters (assumed to be defined from user inputs and results)
-            discount_rate = interest_rate / 100  # Convert percent to decimal
-            years = loan_years  # Number of years in the analysis period
-            # Initial Investment: Total CAPEX per outpost (aggregated over all outposts) incurred at Year 0.
+            st.markdown("---")
+            st.subheader("Discounted Cash Flow Analysis")
+            discount_rate = interest_rate / 100
+            years = loan_years
             initial_investment = (params["microgrid_capex"] + params["drones_capex"]) * num_outposts
-            # Annual Revenue: Assume annual fee per outpost aggregated over all outposts.
             annual_revenue = results["annual_fee_unit"] * 12 * num_outposts
-            # Annual OPEX: Already calculated in results.
             annual_opex = results["annual_opex"]
-            # Debt Service: Annual debt payment aggregated over 12 months.
             annual_debt_service = results["monthly_debt_payment"] * 12
-            
-            # Calculate Net Annual Cash Flow.
             annual_cash_flow = annual_revenue - annual_opex - annual_debt_service
             st.metric("Annual Cash Flow (€)", f"{annual_cash_flow:,.0f}")
             
-            # Discounted Cash Flow Calculation:
-            # Start with the initial investment (a cash outflow at Year 0)
             npv = -initial_investment
-            discounted_cash_flows = []  # Store discounted cash flow for each year for plotting
-            
-            # Loop over each year and discount the net cash flow.
+            discounted_cash_flows = []
             for t in range(1, years + 1):
                 discounted_cf = annual_cash_flow / ((1 + discount_rate) ** t)
                 discounted_cash_flows.append(discounted_cf)
@@ -907,11 +883,8 @@ else:
             
             st.metric("NPV (€)", f"{npv:,.0f}")
             
-            # Prepare data for a Plotly line chart to visualize discounted cash flows.
-            # We also show the undiscounted cash flow for comparison.
             year_list = list(range(1, years + 1))
             undiscounted_cash_flows = [annual_cash_flow] * years
-            
             fig = go.Figure()
             fig.add_trace(go.Scatter(
                 x=year_list,
@@ -927,7 +900,6 @@ else:
                 name='Discounted Cash Flow',
                 line=dict(color='green')
             ))
-            
             fig.update_layout(
                 title='Discounted Cash Flow Analysis',
                 xaxis_title='Year',
@@ -936,14 +908,13 @@ else:
             )
             st.plotly_chart(fig, use_container_width=True)
             
-            # Finally, display cash flow values in a table.
             dcf_table = pd.DataFrame({
                 "Year": year_list,
                 "Discounted Cash Flow (€)": discounted_cash_flows,
                 "Undiscounted Cash Flow (€)": undiscounted_cash_flows
             })
             st.table(dcf_table)
-        
+
         with tab_lcoe:
             st.header("LCOE Calculation")
             st.markdown("""
