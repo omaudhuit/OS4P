@@ -1210,7 +1210,7 @@ else:
         r = interest_rate / 100
         n = loan_years
         CRF = (r * (1+r)**n) / ((1+r)**n - 1) if (1+r)**n - 1 != 0 else 0
-        total_capex_per_outpost = params["microgrid_capex"] + params["drones_capex"] + params["bos_capex"]
+        total_capex_per_outpost = params["microgrid_capex"] + params["drones_capex"]
         annualized_capex = total_capex_per_outpost * CRF
         annual_opex_per_outpost = results["annual_opex_per_outpost"]
         annual_energy = annual_energy_production
