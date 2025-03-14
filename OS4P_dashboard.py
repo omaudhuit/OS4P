@@ -947,27 +947,37 @@ else:
             dcf_data = []
             cumulative_cf = -total_capex
 
-            # --- Add missing sidebar inputs before DCF analysis ---
+            # Ensure the following inputs are defined
             tax_rate = st.number_input("Tax Rate (%)", min_value=0.0, max_value=50.0, value=25.0, step=0.5, format="%.1f")/100
             revenue_growth_rate = st.number_input("Revenue Growth Rate (%)", min_value=0.0, max_value=20.0, value=2.0, step=0.5, format="%.1f")/100
             opex_growth_rate = st.number_input("OPEX Growth Rate (%)", min_value=0.0, max_value=20.0, value=1.0, step=0.5, format="%.1f")/100
             depreciation_period = st.number_input("Depreciation Period (years)", min_value=1, max_value=lifetime_years, value=loan_years, step=1, format="%d")
 
             for t in range(1, lifetime + 1):
-                # Assume revenue grows at revenue_growth_rate
+                # Calculate annual revenue with growth; revenue is based on the fee per outpost
                 annual_revenue = results["annual_fee_unit"] * 12 * params["num_outposts"] * ((1 + revenue_growth_rate) ** (t-1))
-                # OPEX grows at opex_growth_rate
+                
+                # OPEX is now treated as additional revenue (customer-side income), growing over time
                 annual_opex = results["annual_opex"] * ((1 + opex_growth_rate) ** (t-1))
-                # Straight-line depreciation (for first 'depreciation_period' years)
-                depreciation = total_capex/depreciation_period if t <= depreciation_period else 0
+                
+                # Depreciation is applied for the first 'depreciation_period' years
+                depreciation = total_capex / depreciation_period if t <= depreciation_period else 0
+                
+                # EBIT is now computed as revenue plus additional OPEX revenue, less depreciation
                 EBIT = annual_revenue + annual_opex - depreciation
+                
+                # Compute taxes only if EBIT is positive
                 taxes = tax_rate * EBIT if EBIT > 0 else 0
+                
+                # Free Cash Flow to the Firm: add back depreciation after subtracting taxes
                 FCFF = EBIT - taxes + depreciation
-                # Discount factor & discounted FCFF
-                df = (1+discount_rate)**(-t)
+                
+                # Discount the FCFF to present value
+                df = (1 + discount_rate) ** (-t)
                 discounted_fcff = FCFF * df
+                
                 cumulative_cf += discounted_fcff
-                cashflows.append(FCFF)  # for IRR calculation we use un-discounted FCFF in subsequent years
+                cashflows.append(FCFF)
                 dcf_data.append({
                     "Year": t,
                     "Revenue (€)": annual_revenue,
@@ -980,7 +990,7 @@ else:
                     "Discounted FCFF (€)": discounted_fcff,
                     "Cumulative CF (€)": cumulative_cf
                 })
-            
+
             dcf_df = pd.DataFrame(dcf_data)
             st.markdown("**Detailed Cash Flow Table:**")
             st.dataframe(dcf_df.style.format({
@@ -995,11 +1005,11 @@ else:
                 "Cumulative CF (€)": "{:,.0f}"
             }))
 
-            # Calculate NPV and IRR
+            # Calculate NPV and IRR based on the FCFF series
             npv_value = npf.npv(discount_rate, [-total_capex] + list(dcf_df["FCFF (€)"]))
             irr_value = npf.irr([-total_capex] + list(dcf_df["FCFF (€)"]))
-            
-            # Calculate payback period
+
+            # Calculate payback period based on discounted cash flows
             cum_cash = -total_capex
             payback = None
             for index, row in dcf_df.iterrows():
@@ -1007,7 +1017,7 @@ else:
                 if cum_cash >= 0:
                     payback = row["Year"]
                     break
-            
+
             st.metric("NPV (€)", f"{npv_value:,.0f}")
             st.metric("IRR (%)", f"{irr_value*100:.2f}" if irr_value is not None else "N/A")
             st.metric("Payback Period (years)", f"{payback if payback is not None else 'Not achieved'}")
