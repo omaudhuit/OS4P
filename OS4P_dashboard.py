@@ -890,7 +890,8 @@ else:
             annual_revenue = results["annual_fee_unit"] * 12 * num_outposts
             annual_opex = results["annual_opex"]
             annual_debt_service = results["monthly_debt_payment"] * 12
-            annual_cash_flow = annual_revenue - annual_opex - annual_debt_service
+            # Simple DCF section (updated):
+            annual_cash_flow = annual_revenue + annual_opex - annual_debt_service
             st.metric("Annual Cash Flow (€)", f"{annual_cash_flow:,.0f}")
             
             npv = -initial_investment
@@ -959,7 +960,7 @@ else:
                 annual_opex = results["annual_opex"] * ((1 + opex_growth_rate) ** (t-1))
                 # Straight-line depreciation (for first 'depreciation_period' years)
                 depreciation = total_capex/depreciation_period if t <= depreciation_period else 0
-                EBIT = annual_revenue - annual_opex - depreciation
+                EBIT = annual_revenue + annual_opex - depreciation
                 taxes = tax_rate * EBIT if EBIT > 0 else 0
                 FCFF = EBIT - taxes + depreciation
                 # Discount factor & discounted FCFF
