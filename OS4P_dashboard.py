@@ -905,31 +905,6 @@ else:
             # Estimate annual electricity production from one diesel generator, then multiply:
             annual_electricity_diesel = annual_fuel_consumption_diesel * diesel_generator_efficiency
             annual_electricity_diesel_total = annual_electricity_diesel * number_diesel_generators
-
-            # Diesel LCOE calculation (€/kWh)
-            lcoe_diesel = annual_total_cost_diesel / annual_electricity_diesel_total if annual_electricity_diesel_total > 0 else float('inf')
-            
-            st.markdown("### Diesel Generator LCOE Calculation")
-            st.metric("Diesel Generator LCOE (€/kWh)", f"{lcoe_diesel:.4f}")
-
-            diesel_lcoe_breakdown = pd.DataFrame({
-                "Metric": [
-                    "Total Annualized CAPEX (€/year)",
-                    "Total Annual OPEX (€/year)",
-                    "Total Annual Fuel Cost (€/year)",
-                    "Total Annual Cost (€/year)",
-                    "Total Annual Electricity Production (kWh/year)"
-                ],
-                "Value": [
-                    total_annualized_capex_diesel,
-                    total_diesel_opex,
-                    total_annual_fuel_cost,
-                    annual_total_cost_diesel,
-                    annual_electricity_diesel_total
-                ]
-            })
-            st.markdown("**Diesel Generator LCOE Breakdown:**")
-            st.table(diesel_lcoe_breakdown)
         
         with tab_visualizations:
             st.subheader("Cost Breakdown Visualization")
