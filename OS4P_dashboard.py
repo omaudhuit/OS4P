@@ -60,7 +60,6 @@ else:
         # CAPEX & OPEX Inputs
         microgrid_capex = params["microgrid_capex"]
         drones_capex = params["drones_capex"]
-        bos_capex = params["bos_capex"]
         maintenance_opex = params["maintenance_opex"]
         communications_opex = params["communications_opex"]
         security_opex = params["security_opex"]
