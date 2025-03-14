@@ -881,7 +881,7 @@ else:
             discount_rate = interest_rate / 100  # Convert percent to decimal
             years = loan_years  # Number of years in the analysis period
             # Initial Investment: Total CAPEX per outpost (aggregated over all outposts) incurred at Year 0.
-            initial_investment = (params["microgrid_capex"] + params["drones_capex"] + params["bos_capex"]) * num_outposts
+            initial_investment = (params["microgrid_capex"] + params["drones_capex"]) * num_outposts
             # Annual Revenue: Assume annual fee per outpost aggregated over all outposts.
             annual_revenue = results["annual_fee_unit"] * 12 * num_outposts
             # Annual OPEX: Already calculated in results.
