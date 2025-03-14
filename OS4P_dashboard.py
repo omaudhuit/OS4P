@@ -1065,6 +1065,80 @@ else:
                 )
                 st.plotly_chart(fig, use_container_width=True)
 
+            # --- New Visualization: Debt Repayment vs. Post-Debt Cash Flow ---
+            # Compute an annual amortization schedule (aggregated by year)
+            months = loan_years * 12
+            monthly_rate = interest_rate / 100 / 12
+            debt_amount = results["debt"]
+            remaining_principal = debt_amount
+            annual_principal_repaid = []
+            annual_interest_paid = []
+            for year in range(1, loan_years + 1):
+                principal_this_year = 0
+                interest_this_year = 0
+                for m in range(12):
+                    if remaining_principal <= 0:
+                        break
+                    interest_payment = remaining_principal * monthly_rate
+                    principal_payment = results["monthly_debt_payment"] - interest_payment
+                    # avoid overpayment
+                    if principal_payment > remaining_principal:
+                        principal_payment = remaining_principal
+                    principal_this_year += principal_payment
+                    interest_this_year += interest_payment
+                    remaining_principal -= principal_payment
+                annual_principal_repaid.append(principal_this_year)
+                annual_interest_paid.append(interest_this_year)
+
+            # Compute cumulative debt repaid over the loan period
+            cumulative_debt_repaid = np.cumsum(annual_principal_repaid)
+
+            # Determine the debt payoff year (first year in which cumulative debt repaid >= initial debt)
+            payoff_year = None
+            for i, cum in enumerate(cumulative_debt_repaid, start=1):
+                if cum >= debt_amount:
+                    payoff_year = i
+                    break
+
+            # Compute cumulative post-debt operational cash flow.
+            # For years at or before the debt is paid off, assume no additional "free" cash (i.e. still servicing debt).
+            # After payoff, the full operating cash (annual_revenue + annual_opex) becomes available.
+            cumulative_post_debt_cf = []
+            post_debt_cf_total = 0
+            for year in range(1, loan_years + 1):
+                if payoff_year is not None and year > payoff_year:
+                    annual_post_debt = annual_revenue + annual_opex  # debt service no longer applies
+                else:
+                    annual_post_debt = 0
+                post_debt_cf_total += annual_post_debt
+                cumulative_post_debt_cf.append(post_debt_cf_total)
+
+            # Create a combined chart to visualize both series
+            fig2 = go.Figure()
+            fig2.add_trace(go.Scatter(
+                x=list(range(1, loan_years + 1)),
+                y=cumulative_debt_repaid,
+                mode="lines+markers",
+                name="Cumulative Debt Repaid",
+                line=dict(color="darkblue")
+            ))
+            fig2.add_trace(go.Scatter(
+                x=list(range(1, loan_years + 1)),
+                y=cumulative_post_debt_cf,
+                mode="lines+markers",
+                name="Cumulative Post-Debt Cash Flow",
+                line=dict(color="green")
+            ))
+            fig2.update_layout(
+                title="Debt Repayment vs. Post-Debt Cash Flow",
+                xaxis_title="Year",
+                yaxis_title="Amount (€)",
+                hovermode="x unified"
+            )
+            st.plotly_chart(fig2, use_container_width=True)
+
+            st.markdown(f"**Debt is repaid by Year:** {payoff_year if payoff_year is not None else 'Not repaid within loan term'}")
+
         with tab_lcoe:
             st.header("LCOE Calculation")
             st.markdown("""
