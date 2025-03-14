@@ -336,6 +336,38 @@ else:
         
         return fig
 
+    # NEW: Combined Sensitivity Analysis Function
+    def create_combined_sensitivity_graph(sensitivity_data, param_name):
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=sensitivity_data['Parameter_Value'],
+            y=sensitivity_data['Absolute_Avoidance_All_Outposts'],
+            mode='lines+markers',
+            name='Absolute GHG Avoidance (tCO₂e/year)',
+            line=dict(color='blue')
+        ))
+        fig.add_trace(go.Scatter(
+            x=sensitivity_data['Parameter_Value'],
+            y=sensitivity_data['Manned_CO2_Emissions'],
+            mode='lines+markers',
+            name='Manned CO₂ Emissions (tonnes/year)',
+            line=dict(color='red')
+        ))
+        fig.add_trace(go.Scatter(
+            x=sensitivity_data['Parameter_Value'],
+            y=sensitivity_data['Innovation_Fund_Score'],
+            mode='lines+markers',
+            name='Innovation Fund Score',
+            line=dict(color='green')
+        ))
+        fig.update_layout(
+            title=f'Combined Sensitivity Analysis for {param_name}',
+            xaxis_title=param_name,
+            yaxis_title='Value',
+            hovermode='x unified'
+        )
+        return fig
+
     def create_emissions_sensitivity_chart(sensitivity_data, param_name):
         fig = go.Figure()
         
@@ -902,6 +934,15 @@ else:
                 sensitivity_param_options[selected_param]
             )
             st.plotly_chart(innovation_score_chart, use_container_width=True)
+
+            # NEW: Combined Sensitivity Analysis Graph
+            st.markdown("#### Combined Sensitivity Analysis")
+            combined_chart = create_combined_sensitivity_graph(
+                sensitivity_results,
+                sensitivity_param_options[selected_param]
+            )
+            st.plotly_chart(combined_chart, use_container_width=True)
+            
             st.markdown("""
             This chart shows how the Innovation Fund score changes with the parameter value. 
             Higher scores (closer to 12) improve chances of funding. Scores are calculated based on the 
