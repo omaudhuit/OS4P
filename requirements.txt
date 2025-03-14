@@ -10,3 +10,4 @@ plotly
 fpdf
 npf
 px
+numpy-financial
