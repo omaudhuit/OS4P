@@ -57,12 +57,10 @@ else:
         co2_factor = params["co2_factor"]
         maintenance_emissions = params["maintenance_emissions"]
 
-        # CAPEX Inputs
+        # CAPEX & OPEX Inputs
         microgrid_capex = params["microgrid_capex"]
         drones_capex = params["drones_capex"]
         bos_capex = params["bos_capex"]
-        
-        # OPEX Inputs
         maintenance_opex = params["maintenance_opex"]
         communications_opex = params["communications_opex"]
         security_opex = params["security_opex"]
@@ -70,8 +68,10 @@ else:
         # Optional detailed CAPEX components
         detailed_capex = params.get("detailed_capex", None)
 
+        # Include the diesel generator count in fuel consumption calculation
+        diesel_generator_count = params.get("number_diesel_generators", 1)
         # Updated CO₂ Emissions Calculation (Including GENSET and M/S 240 GD vehicles)
-        genset_fuel_per_day = params["genset_fuel_per_hour"] * params["genset_operating_hours"]
+        genset_fuel_per_day = params["genset_fuel_per_hour"] * params["genset_operating_hours"] * diesel_generator_count
         ms240_gd_fuel_per_day = params["num_ms240_gd_vehicles"] * params["ms240_gd_fuel_consumption"] * hours_per_day_base
         daily_fuel_consumption = (
             (params["num_large_patrol_boats"] * large_patrol_fuel +
@@ -602,7 +602,9 @@ else:
             "annual_energy_production": annual_energy_production,
             "num_large_patrol_boats": num_large_patrol_boats,
             "num_rib_boats": num_rib_boats,
-            "num_small_patrol_boats": num_small_patrol_boats
+            "num_small_patrol_boats": num_small_patrol_boats,
+            # NEW: Include the diesel generator count in parameters
+            "number_diesel_generators": number_diesel_generators,
         }
         
         if show_capex_detail:
