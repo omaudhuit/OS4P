@@ -501,14 +501,18 @@ else:
             large_patrol_fuel = st.number_input("Large Patrol Boat Fuel (L/h)", min_value=50, max_value=300, value=150, step=10, format="%d")
             rib_fuel = st.number_input("RIB Boat Fuel (L/h)", min_value=10, max_value=100, value=50, step=5, format="%d")
             small_patrol_fuel = st.number_input("Small Patrol Boat Fuel (L/h)", min_value=5, max_value=50, value=30, step=5, format="%d")
-            
+        
             hours_per_day_base = st.number_input("Patrol Hours per Day", min_value=4, max_value=24, value=8, step=1, format="%d")
                    
             st.subheader("Additional Fuel Consumption Parameters")
-            genset_fuel_per_hour = st.number_input("GENSET Fuel Consumption per Hour (L/h)", min_value=0.1, max_value=10.0, value=2.5, step=0.1, format="%.1f")
-            genset_operating_hours = st.number_input("GENSET Operating Hours per Day", min_value=1, max_value=24, value=24, step=1, format="%d")
             num_ms240_gd_vehicles = st.number_input("Number of M/S 240 GD Patrol Vehicles", min_value=0, max_value=100, value=1, step=1, format="%d")
             ms240_gd_fuel_consumption = st.number_input("M/S 240 GD Patrol Vehicle Fuel Consumption (L/h)", min_value=0, max_value=25, value=15, step=10, format="%d")
+            diesel_generator_capex = st.number_input("Diesel Generator CAPEX (€)", min_value=10000, max_value=200000, value=50000, step=5000, format="%d")
+            diesel_generator_opex = st.number_input("Diesel Generator Annual OPEX (€)", min_value=1000, max_value=20000, value=3000, step=500, format="%d")
+            diesel_fuel_cost = st.number_input("Diesel Fuel Cost (€/liter)", min_value=0.5, max_value=2.0, value=1.5, step=0.1, format="%.1f")
+            diesel_generator_efficiency = st.number_input("Diesel Generator Efficiency (kWh per liter)", min_value=0.1, max_value=5.0, value=2.5, step=0.1, format="%.1f")
+            genset_fuel_per_hour = st.number_input("GENSET Fuel Consumption per Hour (L/h)", min_value=0.1, max_value=10.0, value=2.5, step=0.1, format="%.1f")
+            genset_operating_hours = st.number_input("GENSET Operating Hours per Day", min_value=1, max_value=24, value=24, step=1, format="%d")
             
             st.subheader("Operational Parameters")
             operating_days_per_year = st.number_input("Operating Days per Year", min_value=50, max_value=365, value=180, step=1, format="%d")
@@ -565,12 +569,7 @@ else:
                 drones_capex = st.number_input("Drones CAPEX", min_value=20000, max_value=100000, value=60000, step=5000, format="%d")
                 bos_capex = st.number_input("BOS (Balance of System) CAPEX", min_value=10000, max_value=100000, value=40000, step=5000, format="%d")
             
-            # In the sidebar (inside with st.sidebar:), add new inputs for the diesel generator:
-            diesel_generator_capex = st.number_input("Diesel Generator CAPEX (€)", min_value=10000, max_value=200000, value=50000, step=5000, format="%d")
-            diesel_generator_opex = st.number_input("Diesel Generator Annual OPEX (€)", min_value=1000, max_value=20000, value=3000, step=500, format="%d")
-            diesel_fuel_cost = st.number_input("Diesel Fuel Cost (€/liter)", min_value=0.5, max_value=2.0, value=1.5, step=0.1, format="%.1f")
-            diesel_generator_efficiency = st.number_input("Diesel Generator Efficiency (kWh per liter)", min_value=0.1, max_value=5.0, value=2.5, step=0.1, format="%.1f")
-            
+         
             st.subheader("OPEX Inputs (€ per Outpost per Year)")
             maintenance_opex = st.number_input("Maintenance OPEX", min_value=500, max_value=5000, value=2000, step=1000, format="%d")
             communications_opex = st.number_input("Communications OPEX", min_value=500, max_value=1500, value=1000, step=1000, format="%d")
