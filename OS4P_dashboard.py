@@ -616,12 +616,8 @@ else:
                     min_value=20000, max_value=100000, 
                     value=60000, step=5000, format="%d"
                 )
-                bos_capex = st.number_input(
-                    "BOS (Balance of System) CAPEX", 
-                    min_value=10000, max_value=100000, 
-                    value=40000, step=5000, format="%d"
-                )
-                total_capex_per_outpost = microgrid_capex + drones_capex + bos_capex
+
+                total_capex_per_outpost = microgrid_capex + drones_capex
                 st.markdown(f"**Total CAPEX per Outpost: €{total_capex_per_outpost:,}**")
          
             st.subheader("OPEX Inputs (€ per Outpost per Year)")
