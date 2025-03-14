@@ -657,7 +657,6 @@ else:
         if show_capex_detail:
             params["microgrid_capex"] = microgrid_capex
             params["drones_capex"] = drones_capex
-            params["bos_capex"] = bos_capex
             params["detailed_capex"] = {
                 "Solar PV (10kWp)": solar_pv_capex,
                 "Wind Turbine (3kW)": wind_turbine_capex,
@@ -671,7 +670,6 @@ else:
         else:
             params["microgrid_capex"] = microgrid_capex
             params["drones_capex"] = drones_capex
-            params["bos_capex"] = bos_capex
         
         results = calculate_os4p(params)
         
