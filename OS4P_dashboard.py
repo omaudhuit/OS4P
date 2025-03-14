@@ -497,6 +497,9 @@ else:
             num_rib_boats = st.number_input("Number of RIB Boats", min_value=0, max_value=10, value=1, step=1, format="%d")
             num_small_patrol_boats = st.number_input("Number of Small Patrol Boats", min_value=0, max_value=10, value=1, step=1, format="%d")
             num_ms240_gd_vehicles = st.number_input("Number of M/S 240 GD Patrol Vehicles", min_value=0, max_value=100, value=1, step=1, format="%d")
+            
+            # NEW: Add input for the number of diesel generators
+            number_diesel_generators = st.number_input("Number of Diesel Generators", min_value=1, max_value=50, value=1, step=1, format="%d")
            
             st.subheader("Fuel Consumption (Liters per Hour) - Manned Scenario")
             large_patrol_fuel = st.number_input("Large Patrol Boat Fuel (L/h)", min_value=50, max_value=300, value=150, step=10, format="%d")
@@ -876,6 +879,51 @@ else:
                     annual_fuel_cost,
                     annual_total_cost_diesel,
                     annual_electricity_diesel
+                ]
+            })
+            st.markdown("**Diesel Generator LCOE Breakdown:**")
+            st.table(diesel_lcoe_breakdown)
+
+            # Diesel Generator LCOE Calculation – updated for multiple diesel generators:
+            r = interest_rate / 100
+            n = loan_years
+            CRF = (r * (1+r)**n) / ((1+r)**n - 1) if (1+r)**n - 1 != 0 else 0
+
+            # Annualized cost components for one diesel generator:
+            annualized_capex_diesel = diesel_generator_capex * CRF
+            annual_fuel_consumption_diesel = params["genset_fuel_per_hour"] * params["genset_operating_hours"] * operating_days_per_year  # (L/year) per unit
+            annual_fuel_cost = annual_fuel_consumption_diesel * diesel_fuel_cost
+            diesel_opex_total = diesel_generator_opex
+            # Now multiply each by the number of diesel generators:
+            total_annualized_capex_diesel = annualized_capex_diesel * number_diesel_generators
+            total_diesel_opex = diesel_opex_total * number_diesel_generators
+            total_annual_fuel_cost = annual_fuel_cost * number_diesel_generators
+            annual_total_cost_diesel = total_annualized_capex_diesel + total_diesel_opex + total_annual_fuel_cost
+
+            # Estimate annual electricity production from one diesel generator, then multiply:
+            annual_electricity_diesel = annual_fuel_consumption_diesel * diesel_generator_efficiency
+            annual_electricity_diesel_total = annual_electricity_diesel * number_diesel_generators
+
+            # Diesel LCOE calculation (€/kWh)
+            lcoe_diesel = annual_total_cost_diesel / annual_electricity_diesel_total if annual_electricity_diesel_total > 0 else float('inf')
+            
+            st.markdown("### Diesel Generator LCOE Calculation")
+            st.metric("Diesel Generator LCOE (€/kWh)", f"{lcoe_diesel:.4f}")
+
+            diesel_lcoe_breakdown = pd.DataFrame({
+                "Metric": [
+                    "Total Annualized CAPEX (€/year)",
+                    "Total Annual OPEX (€/year)",
+                    "Total Annual Fuel Cost (€/year)",
+                    "Total Annual Cost (€/year)",
+                    "Total Annual Electricity Production (kWh/year)"
+                ],
+                "Value": [
+                    total_annualized_capex_diesel,
+                    total_diesel_opex,
+                    total_annual_fuel_cost,
+                    annual_total_cost_diesel,
+                    annual_electricity_diesel_total
                 ]
             })
             st.markdown("**Diesel Generator LCOE Breakdown:**")
