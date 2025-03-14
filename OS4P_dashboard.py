@@ -534,6 +534,7 @@ else:
             
             if show_capex_detail:
                 st.markdown("#### Microgrid CAPEX Breakdown")
+                st.markdown("##### Equipment CAPEX")
                 solar_pv_capex = st.number_input(
                     "Solar PV System (10kWp)", 
                     min_value=5000, max_value=50000, 
@@ -557,7 +558,7 @@ else:
   
                 microgrid_equipment = solar_pv_capex + wind_turbine_capex + battery_capex + telecom_capex
 
-                # Input for Microgrid BOS (Balance of System) CAPEX
+                st.markdown("##### BOS CAPEX")
                 microgrid_transp = st.number_input(
                     "Transportation", 
                     min_value=5000, max_value=50000, 
