@@ -98,10 +98,6 @@ else:
         else:
             ghg_rel_avoidance = 0
 
-        # Split CO₂ Emission Avoidance into Absolute and Relative (in tonnes)
-        ghg_abs_avoidance_per_outpost = ghg_abs_avoidance
-        ghg_abs_avoidance_all_outposts = ghg_abs_avoidance_per_outpost * num_outposts
-
         # Financial Calculations using the single CAPEX value
         total_capex = total_capex_per_outpost * num_outposts
         annual_opex_per_outpost = maintenance_opex + communications_opex + security_opex
