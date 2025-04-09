@@ -73,25 +73,34 @@ else:
         # Updated CO₂ Emissions Calculation (Including GENSET and M/S 240 GD vehicles)
         genset_fuel_per_day = params["genset_fuel_per_hour"] * params["genset_operating_hours"] * diesel_generator_count
         ms240_gd_fuel_per_day = params["num_ms240_gd_vehicles"] * params["ms240_gd_fuel_consumption"] * hours_per_day_base
+
+        # Updated CO₂ Emissions Calculation
+        # Calculate daily fuel consumption using vessel counts, GENSET, and M/S 240 GD vehicles
         daily_fuel_consumption = (
             (params["num_large_patrol_boats"] * large_patrol_fuel +
              params["num_rib_boats"] * rib_fuel +
              params["num_small_patrol_boats"] * small_patrol_fuel) * hours_per_day_base
         ) + genset_fuel_per_day + ms240_gd_fuel_per_day
+        
         annual_fuel_consumption = daily_fuel_consumption * operating_days_per_year
+        
+        # Manned emissions are now based solely on the annual fuel consumption from the manned scenario inputs.
         manned_co2_emissions = annual_fuel_consumption * co2_factor  # in kg CO₂ per year
         autonomous_co2_emissions = maintenance_emissions  # in kg CO₂ per year
-
-        # Split CO₂ Emission Avoidance into Absolute and Relative (in tonnes)
-        ghg_abs_avoidance_per_outpost = (manned_co2_emissions - autonomous_co2_emissions) / 1000
-        ghg_abs_avoidance_all_outposts = ghg_abs_avoidance_per_outpost * num_outposts
+        
+        # Calculate GHG Emission Avoidance (not multiplied by the number of outposts)
+        ghg_abs_avoidance = (manned_co2_emissions - autonomous_co2_emissions) / 1000  # tonnes CO₂ per year
         lifetime_years = params["lifetime_years"]
-        ghg_abs_avoidance_lifetime = ghg_abs_avoidance_all_outposts * lifetime_years
-
+        ghg_abs_avoidance_lifetime = ghg_abs_avoidance * lifetime_years
+        
         if manned_co2_emissions > 0:
             ghg_rel_avoidance = ((manned_co2_emissions - autonomous_co2_emissions) / manned_co2_emissions) * 100
         else:
             ghg_rel_avoidance = 0
+
+        # Split CO₂ Emission Avoidance into Absolute and Relative (in tonnes)
+        ghg_abs_avoidance_per_outpost = ghg_abs_avoidance
+        ghg_abs_avoidance_all_outposts = ghg_abs_avoidance_per_outpost * num_outposts
 
         # Financial Calculations using the single CAPEX value
         total_capex = total_capex_per_outpost * num_outposts
@@ -524,7 +533,7 @@ else:
             interest_rate = st.number_input("Interest Rate (%)", min_value=1.0, max_value=15.0, value=4.2, step=0.1, format="%.1f")
             loan_years = st.number_input("Project Loan Years (for financial calculations)", min_value=3, max_value=25, value=10, step=1, format="%d")
             sla_premium = st.number_input("SLA Premium (%)", min_value=0.0, max_value=50.0, value=10.0, step=1.0, format="%.1f")
-            non_unit_cost_pct = st.number_input("Non-unit Cost (%)", min_value=0.0, max_value=100.0, value=10.0, step=0.1, format="%.1f")
+            non_unit_cost_pct = st.number_input("Non-unit Cost (%)", min_value=0.0, max_value=100.0, value=25.0, step=0.1, format="%.1f")
             
             st.subheader("Asset Lifetime")
             lifetime_years = st.number_input("OS4P Unit Lifetime (years)", min_value=1, max_value=50, value=20, step=1, format="%d")
