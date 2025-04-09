@@ -57,12 +57,16 @@ else:
         co2_factor = params["co2_factor"]
         maintenance_emissions = params["maintenance_emissions"]
 
-        # CAPEX & OPEX Inputs
-        microgrid_capex = params["microgrid_capex"]
-        drones_capex = params["drones_capex"]
+        # Use aggregated CAPEX value
+        total_capex_per_outpost = params["total_capex_per_outpost"]
+        
+        # OPEX Inputs
         maintenance_opex = params["maintenance_opex"]
         communications_opex = params["communications_opex"]
         security_opex = params["security_opex"]
+
+        # Optional detailed CAPEX components (for visualization only)
+        detailed_capex = params.get("detailed_capex", None)
 
         # Include the diesel generator count in fuel consumption calculation
         diesel_generator_count = params.get("number_diesel_generators", 1)
@@ -89,8 +93,7 @@ else:
         else:
             ghg_rel_avoidance = 0
 
-        # Financial Calculations
-        total_capex_per_outpost = microgrid_capex + drones_capex
+        # Financial Calculations using the single CAPEX value
         total_capex = total_capex_per_outpost * num_outposts
         annual_opex_per_outpost = maintenance_opex + communications_opex + security_opex
         annual_opex = annual_opex_per_outpost * num_outposts
@@ -140,10 +143,9 @@ else:
         lcoe = (annualized_capex + annual_opex_per_outpost) / annual_energy
 
         capex_breakdown = {
-            "Microgrid": microgrid_capex * num_outposts,
-            "Drones": drones_capex * num_outposts,
+            "Total CAPEX": total_capex_per_outpost * num_outposts
         }
-
+        
         result = {
             "ghg_abs_avoidance_per_outpost": ghg_abs_avoidance_per_outpost,
             "ghg_abs_avoidance_all_outposts": ghg_abs_avoidance_all_outposts,
@@ -187,14 +189,24 @@ else:
             }
         }
         
+        if detailed_capex:
+            result["detailed_capex_breakdown"] = detailed_capex
+        
         return result
 
-    def create_cost_breakdown_chart(capex_data, opex_data):
-        capex_df = pd.DataFrame(list(capex_data.items()), columns=['Category', 'Value'])
-        capex_df['Type'] = 'CAPEX'
-        opex_df = pd.DataFrame(list(opex_data.items()), columns=['Category', 'Value'])
-        opex_df['Type'] = 'OPEX (Annual)'
-        combined_df = pd.concat([capex_df, opex_df])
+    def create_cost_breakdown_chart(capex_data, opex_data, detailed_capex=None):
+        if detailed_capex is not None:
+            capex_detailed_df = pd.DataFrame(list(detailed_capex.items()), columns=['Category', 'Value'])
+            capex_detailed_df['Type'] = 'CAPEX (Detailed)'
+            opex_df = pd.DataFrame(list(opex_data.items()), columns=['Category', 'Value'])
+            opex_df['Type'] = 'OPEX (Annual)'
+            combined_df = pd.concat([capex_detailed_df, opex_df])
+        else:
+            capex_df = pd.DataFrame(list(capex_data.items()), columns=['Category', 'Value'])
+            capex_df['Type'] = 'CAPEX'
+            opex_df = pd.DataFrame(list(opex_data.items()), columns=['Category', 'Value'])
+            opex_df['Type'] = 'OPEX (Annual)'
+            combined_df = pd.concat([capex_df, opex_df])
         
         fig = px.bar(
             combined_df, 
@@ -482,6 +494,15 @@ else:
            
             st.subheader("Fuel Consumption (Liters per Hour) - Manned Scenario")
             large_patrol_fuel = st.number_input("Large Patrol Boat Fuel (L/h)", min_value=50, max_value=300, value=150, step=10, format="%d")
+            num_rib_boats = st.number_input("Number of RIB Boats", min_value=0, max_value=10, value=1, step=1, format="%d")
+            num_small_patrol_boats = st.number_input("Number of Small Patrol Boats", min_value=0, max_value=10, value=1, step=1, format="%d")
+            num_ms240_gd_vehicles = st.number_input("Number of M/S 240 GD Patrol Vehicles", min_value=0, max_value=100, value=1, step=1, format="%d")
+            
+            # NEW: Add input for the number of diesel generators
+            number_diesel_generators = st.number_input("Number of Diesel Generators", min_value=1, max_value=50, value=1, step=1, format="%d")
+           
+            st.subheader("Fuel Consumption (Liters per Hour) - Manned Scenario")
+            large_patrol_fuel = st.number_input("Large Patrol Boat Fuel (L/h)", min_value=50, max_value=300, value=150, step=10, format="%d")
             rib_fuel = st.number_input("RIB Boat Fuel (L/h)", min_value=10, max_value=100, value=50, step=5, format="%d")
             small_patrol_fuel = st.number_input("Small Patrol Boat Fuel (L/h)", min_value=5, max_value=50, value=30, step=5, format="%d")
         
@@ -504,20 +525,13 @@ else:
             interest_rate = st.number_input("Interest Rate (%)", min_value=1.0, max_value=15.0, value=4.2, step=0.1, format="%.1f")
             loan_years = st.number_input("Project Loan Years (for financial calculations)", min_value=3, max_value=25, value=10, step=1, format="%d")
             sla_premium = st.number_input("SLA Premium (%)", min_value=0.0, max_value=50.0, value=10.0, step=1.0, format="%.1f")
-            non_unit_cost_pct = st.number_input("Non-unit Cost (%)", min_value=0.0, max_value=100.0, value=25.0, step=0.1, format="%.1f")
+            non_unit_cost_pct = st.number_input("Non-unit Cost (%)", min_value=0.0, max_value=100.0, value=10.0, step=0.1, format="%.1f")
             
             st.subheader("Asset Lifetime")
             lifetime_years = st.number_input("OS4P Unit Lifetime (years)", min_value=1, max_value=50, value=20, step=1, format="%d")
             
             st.subheader("OS4P Emissions")
-            maintenance_emissions = st.number_input(
-                "Maintenance Emissions (kg CO₂)", 
-                min_value=500, 
-                max_value=20000, 
-                value=1594, 
-                step=10, 
-                format="%d"
-            )
+            maintenance_emissions = st.number_input("Maintenance Emissions (kg CO₂)", min_value=500, max_value=20000, value=1594, step=10, format="%d")
                   
             st.subheader("Energy Production")
             annual_energy_production = st.number_input(
@@ -533,91 +547,40 @@ else:
             show_capex_detail = st.checkbox("Show detailed CAPEX breakdown", value=False)
             
             if show_capex_detail:
-                st.markdown("#### Microgrid CAPEX Breakdown")
-                st.markdown("##### Equipment CAPEX")
-                solar_pv_capex = st.number_input(
-                    "Solar PV System (10kWp)", 
-                    min_value=5000, max_value=50000, 
-                    value=15000, step=1000, format="%d"
-                )
-                wind_turbine_capex = st.number_input(
-                    "Wind Turbine (3kW)", 
-                    min_value=5000, max_value=50000, 
-                    value=12000, step=1000, format="%d"
-                )
-                battery_capex = st.number_input(
-                    "Battery Storage (30kWh)", 
-                    min_value=10000, max_value=100000, 
-                    value=36000, step=1000, format="%d"
-                )
-                telecom_capex = st.number_input(
-                    "Telecommunications", 
-                    min_value=5000, max_value=50000, 
-                    value=15000, step=1000, format="%d"
-                )
-  
-                microgrid_equipment = solar_pv_capex + wind_turbine_capex + battery_capex + telecom_capex
-
-                st.markdown("##### BOS CAPEX")
-                microgrid_transp = st.number_input(
-                    "Transportation", 
-                    min_value=5000, max_value=50000, 
-                    value=20000, step=1000, format="%d"
-                )
-
-                install_capex = st.number_input(
-                    "Installation & Commissioning", 
-                    min_value=5000, max_value=50000, 
-                    value=12000, step=1000, format="%d"
-                )
-
-                st.markdown("#### Other CAPEX")
-                bos_contin = st.number_input(
-                    "Additional BOS/CONTINGENCY CAPEX", 
-                    min_value=0, max_value=100000, 
-                    value=0, step=5000, format="%d"
-                )
-
-                microgrid_bos = microgrid_transp + install_capex + bos_contin
-
-                microgrid_capex = microgrid_equipment + microgrid_bos
-
-                st.markdown(f"**Total Microgrid CAPEX: €{microgrid_capex:,}**")
-                
-                # (Assumes that microgrid_capex has been computed earlier from the detailed breakdown,
-                #  and that microgrid_bos is its BOS component. Define bos_capex for consistency.)
-                bos_capex = microgrid_bos  
+                st.markdown("#### Detailed CAPEX Breakdown")
+                solar_pv_capex = st.number_input("Solar PV System (10kWp)", min_value=5000, max_value=50000, value=15000, step=1000, format="%d")
+                wind_turbine_capex = st.number_input("Wind Turbine (3kW)", min_value=5000, max_value=50000, value=12000, step=1000, format="%d")
+                battery_capex = st.number_input("Battery Storage (30kWh)", min_value=10000, max_value=100000, value=36000, step=1000, format="%d")
+                telecom_capex = st.number_input("Telecommunications", min_value=5000, max_value=50000, value=15000, step=1000, format="%d")
+                bos_micro_capex = st.number_input("Microgrid BOS", min_value=5000, max_value=50000, value=20000, step=1000, format="%d")
+                install_capex = st.number_input("Installation & Commissioning", min_value=5000, max_value=50000, value=12000, step=1000, format="%d")
                 
                 st.markdown("#### Drone System CAPEX Breakdown")
-                drone_units = st.number_input(
-                    "Number of Drones per Outpost", 
-                    min_value=1, max_value=10, 
-                    value=3, step=1, format="%d"
-                )
-                drone_unit_cost = st.number_input(
-                    "Cost per Drone (€)", 
-                    min_value=5000, max_value=50000, 
-                    value=20000, step=1000, format="%d"
-                )
-                drones_capex = drone_units * drone_unit_cost
-                st.markdown(f"**Total Drones CAPEX: €{drones_capex:,}**")
+                drone_units = st.number_input("Number of Drones per Outpost", min_value=1, max_value=10, value=3, step=1, format="%d")
+                drone_unit_cost = st.number_input("Cost per Drone (€)", min_value=5000, max_value=50000, value=20000, step=1000, format="%d")
+                drones_capex_detail = drone_units * drone_unit_cost
                 
-                total_capex_per_outpost = microgrid_capex + drones_capex
+                st.markdown("#### Other CAPEX")
+                bos_capex = st.number_input("Additional BOS/CONTINGENCY/OTHER CAPEX", min_value=0, max_value=100000, value=0, step=5000, format="%d")
+                
+                # Aggregated CAPEX is the sum of all detailed components:
+                total_capex_per_outpost = solar_pv_capex + wind_turbine_capex + battery_capex + telecom_capex + bos_micro_capex + install_capex + drones_capex_detail + bos_capex
                 st.markdown(f"**Total CAPEX per Outpost: €{total_capex_per_outpost:,}**")
+                
+                detailed_capex = {
+                    "Solar PV (10kWp)": solar_pv_capex,
+                    "Wind Turbine (3kW)": wind_turbine_capex,
+                    "Battery Storage (30kWh)": battery_capex,
+                    "Telecommunications": telecom_capex,
+                    "Microgrid BOS": bos_micro_capex,
+                    "Installation & Commissioning": install_capex,
+                    f"Drones ({drone_units}x)": drones_capex_detail,
+                    "Additional BOS": bos_capex
+                }
             else:
-                microgrid_capex = st.number_input(
-                    "Microgrid CAPEX", 
-                    min_value=50000, max_value=200000, 
-                    value=110000, step=5000, format="%d"
-                )
-                drones_capex = st.number_input(
-                    "Drones CAPEX", 
-                    min_value=20000, max_value=100000, 
-                    value=60000, step=5000, format="%d"
-                )
-
-                total_capex_per_outpost = microgrid_capex + drones_capex
-                st.markdown(f"**Total CAPEX per Outpost: €{total_capex_per_outpost:,}**")
+                total_capex_per_outpost = st.number_input("Total CAPEX per Outpost", min_value=50000, max_value=500000, value=110000, step=5000, format="%d")
+                detailed_capex = None
+            
          
             st.subheader("OPEX Inputs (€ per Outpost per Year)")
             maintenance_opex = st.number_input("Maintenance OPEX", min_value=500, max_value=5000, value=2000, step=1000, format="%d")
@@ -656,12 +619,13 @@ else:
         if show_capex_detail:
             params["microgrid_capex"] = microgrid_capex
             params["drones_capex"] = drones_capex
+            params["bos_capex"] = bos_capex
             params["detailed_capex"] = {
                 "Solar PV (10kWp)": solar_pv_capex,
                 "Wind Turbine (3kW)": wind_turbine_capex,
                 "Battery Storage (30kWh)": battery_capex,
                 "Telecommunications": telecom_capex,
-                "Microgrid BOS": microgrid_bos,
+                "Microgrid BOS": bos_micro_capex,
                 "Installation & Commissioning": install_capex,
                 f"Drones ({drone_units}x)": drones_capex,
                 "Additional BOS": bos_capex
@@ -669,14 +633,15 @@ else:
         else:
             params["microgrid_capex"] = microgrid_capex
             params["drones_capex"] = drones_capex
+            params["bos_capex"] = bos_capex
         
         results = calculate_os4p(params)
         
-        # Define tabs with the combined Financial Analysis tab
-        tab_intro, tab_overview, tab_innovation, tab_financial, tab_lcoe, tab_visualizations, tab_sensitivity = st.tabs(
-            ["Introduction", "Overview", "Innovation Fund Scoring Framework", "Financial Analysis", "LCOE Calculation", "Visualizations", "Sensitivity Analysis"]
+        # Define tabs with a new tab for Innovation Fund Scoring Framework
+        tab_intro, tab_overview, tab_innovation, tab_financial, tab_financial_model, tab_lcoe, tab_visualizations, tab_sensitivity = st.tabs(
+            ["Introduction", "Overview", "Innovation Fund Scoring Framework", "Financial Details", "Financial Model", "LCOE Calculation", "Visualizations", "Sensitivity Analysis"]
         )
-
+        
         with tab_intro:
             st.header("Introduction")
             st.markdown("""
@@ -722,6 +687,7 @@ else:
                 st.metric("Total Absolute GHG Emission Avoidance (tCO₂e/year)", f"{results['ghg_abs_avoidance_all_outposts']:.1f}")
             with col3:
                 st.metric("Lifetime Absolute GHG Emission Avoidance (tCO₂e)", f"{results['ghg_abs_avoidance_lifetime']:.1f}")
+            
             st.metric("Relative GHG Emission Avoidance (%)", f"{results['ghg_rel_avoidance']:.1f}")
             
             st.subheader("Cost Overview")
@@ -735,7 +701,7 @@ else:
             with col3:
                 st.metric("Total Cost of Ownership (€)", f"{results['tco']:,.0f}")
                 st.metric("TCO per Outpost (€)", f"{results['tco_per_outpost']:,.0f}")
-
+        
         with tab_innovation:
             st.subheader("Efficiency Metrics & Innovation Fund Score")
             with st.expander("Innovation Fund Scoring Criteria"):
@@ -743,10 +709,12 @@ else:
                 **Innovation Fund Scoring for Cost Efficiency (INNOVFUND-2024-NZT-PILOTS)**
                 
                 The Innovation Fund uses the following formula to score projects based on cost efficiency:
+                
                 - If cost efficiency ratio ≤ 2000 EUR/t CO₂-eq:  
                   Score = 12 - (12 × (cost efficiency ratio / 2000))
+                
                 - If cost efficiency ratio > 2000 EUR/t CO₂-eq:  
-                  Score = 0 
+                  Score = 0
                 
                 The result is rounded to the nearest half point. The minimum score is 0, maximum is 12.
                 
@@ -767,7 +735,7 @@ else:
                 score_lifetime_color = "green" if results['innovation_fund_score_lifetime'] >= 9 else ("orange" if results['innovation_fund_score_lifetime'] >= 6 else "red")
                 st.markdown(f"<h3 style='color: {score_lifetime_color}'>Lifetime Score: {results['innovation_fund_score_lifetime']}/12</h3>", unsafe_allow_html=True)
                 st.progress((results['innovation_fund_score_lifetime'] / 12))
-
+            
             st.markdown("### Detailed Scoring Framework for PILOT Projects (INNOVFUND-2024-NZT-PILOTS)")
             st.markdown("""
             - **Degree of Innovation**
@@ -840,10 +808,8 @@ else:
             st.write(f"**Cost Efficiency Score:** {cost_efficiency_score:.1f} (Calculated from cost efficiency ratio)")
             st.write(f"**Bonus Points:** {bonus_points:.1f}")
             st.write(f"**Total Innovation Fund Score:** {total_innovation_score:.1f} (Maximum without bonus: 87, with bonus: 91)")
-
+        
         with tab_financial:
-            st.header("Financial Analysis")
-
             st.subheader("Financing Details")
             col1, col2, col3 = st.columns(3)
             with col1:
@@ -862,20 +828,50 @@ else:
             
             st.markdown("#### Payback Analysis")
             st.metric("Payback Period (years)", f"{results['payback_years']:.1f}")
+        
+        with tab_financial_model:
+            st.header("Discounted Cash Flow Analysis")
+            st.markdown("""
+            In this analysis we calculate the Net Present Value (NPV) of the project's cash flows over the loan period.
             
-            st.markdown("---")
-            st.subheader("Discounted Cash Flow Analysis")
-            discount_rate = interest_rate / 100
-            years = loan_years
-            initial_investment = (params["microgrid_capex"] + params["drones_capex"]) * num_outposts
+            **Steps in the Calculation:**
+            1. **Initial Investment**: Total CAPEX per outpost (aggregated over all outposts) is assumed to be incurred at Year 0.
+            2. **Annual Revenue**: Based on the monthly fee per outpost (annual fee = monthly fee × 12) aggregated over all outposts.
+            3. **Annual OPEX**: The annual operating expenditure is taken from financial results.
+            4. **Debt Service**: Annual debt service is calculated as the monthly debt payment multiplied by 12.
+            5. **Net Annual Cash Flow**: 
+                 Annual Cash Flow = Annual Revenue − Annual OPEX − Annual Debt Service.
+            6. **Discounting**: Each year’s net cash flow is discounted using the formula:
+                 Discounted CF = Net Annual Cash Flow / (1 + discount_rate)^(year)
+            7. **NPV**: NPV is the sum of all discounted annual cash flows (plus the negative initial investment).
+            """)
+            
+            # Financial parameters (assumed to be defined from user inputs and results)
+            discount_rate = interest_rate / 100  # Convert percent to decimal
+            years = loan_years  # Number of years in the analysis period
+            
+            # Initial Investment: Total CAPEX per outpost (aggregated over all outposts) incurred at Year 0.
+            initial_investment = (params["microgrid_capex"] + params["drones_capex"] + params["bos_capex"]) * num_outposts
+            
+            # Annual Revenue: Assume annual fee per outpost aggregated over all outposts.
             annual_revenue = results["annual_fee_unit"] * 12 * num_outposts
+            
+            # Annual OPEX: Already calculated in results.
             annual_opex = results["annual_opex"]
+            
+            # Debt Service: Annual debt payment aggregated over 12 months.
             annual_debt_service = results["monthly_debt_payment"] * 12
+            
+            # Calculate Net Annual Cash Flow.
             annual_cash_flow = annual_revenue - annual_opex - annual_debt_service
             st.metric("Annual Cash Flow (€)", f"{annual_cash_flow:,.0f}")
             
+            # Discounted Cash Flow Calculation:
+            # Start with the initial investment (a cash outflow at Year 0)
             npv = -initial_investment
-            discounted_cash_flows = []
+            discounted_cash_flows = []  # Store discounted cash flow for each year for plotting
+            
+            # Loop over each year and discount the net cash flow.
             for t in range(1, years + 1):
                 discounted_cf = annual_cash_flow / ((1 + discount_rate) ** t)
                 discounted_cash_flows.append(discounted_cf)
@@ -883,8 +879,12 @@ else:
             
             st.metric("NPV (€)", f"{npv:,.0f}")
             
+            # Prepare data for a Plotly line chart to visualize discounted cash flows.
+            # We also show the undiscounted cash flow for comparison.
             year_list = list(range(1, years + 1))
             undiscounted_cash_flows = [annual_cash_flow] * years
+            
+            import plotly.graph_objects as go
             fig = go.Figure()
             fig.add_trace(go.Scatter(
                 x=year_list,
@@ -900,21 +900,24 @@ else:
                 name='Discounted Cash Flow',
                 line=dict(color='green')
             ))
+            
             fig.update_layout(
                 title='Discounted Cash Flow Analysis',
                 xaxis_title='Year',
                 yaxis_title='Cash Flow (€)',
                 hovermode='x unified'
             )
+            
             st.plotly_chart(fig, use_container_width=True)
             
+            # Finally, display cash flow values in a table.
             dcf_table = pd.DataFrame({
                 "Year": year_list,
                 "Discounted Cash Flow (€)": discounted_cash_flows,
                 "Undiscounted Cash Flow (€)": undiscounted_cash_flows
             })
             st.table(dcf_table)
-
+        
         with tab_lcoe:
             st.header("LCOE Calculation")
             st.markdown("""
@@ -929,7 +932,7 @@ else:
             r = interest_rate / 100
             n = loan_years
             CRF = (r * (1+r)**n) / ((1+r)**n - 1) if (1+r)**n - 1 != 0 else 0
-            total_capex_per_outpost = params["microgrid_capex"] + params["drones_capex"]
+            total_capex_per_outpost = params["microgrid_capex"] + params["drones_capex"] + params["bos_capex"]
             annualized_capex = total_capex_per_outpost * CRF
             annual_opex_per_outpost = results["annual_opex_per_outpost"]
             annual_energy = annual_energy_production
@@ -942,36 +945,31 @@ else:
             st.table(lcoe_breakdown)
 
             # Calculate diesel generator LCOE
+            # Calculate the Capital Recovery Factor (CRF) for both systems:
             r = interest_rate / 100
             n = loan_years
             CRF = (r * (1+r)**n) / ((1+r)**n - 1) if (1+r)**n - 1 != 0 else 0
 
-            # Annualized cost components for one diesel generator:
-            annualized_capex_diesel = diesel_generator_capex * CRF * number_diesel_generators
-            annual_fuel_consumption_diesel = params["genset_fuel_per_hour"] * params["genset_operating_hours"] * operating_days_per_year  # (L/year) per unit
+            # Annualized cost components for the diesel generator:
+            annualized_capex_diesel = diesel_generator_capex * CRF
+            annual_fuel_consumption_diesel = params["genset_fuel_per_hour"] * params["genset_operating_hours"] * operating_days_per_year  # in liters/year
             annual_fuel_cost = annual_fuel_consumption_diesel * diesel_fuel_cost
-            diesel_opex_total = diesel_generator_opex
-            # Now multiply each by the number of diesel generators:
-            total_annualized_capex_diesel = annualized_capex_diesel * number_diesel_generators
-            total_diesel_opex = diesel_opex_total * number_diesel_generators        
-            total_annual_fuel_cost = annual_fuel_cost * number_diesel_generators
-            annual_total_cost_diesel = total_annualized_capex_diesel + total_diesel_opex + total_annual_fuel_cost
+            annual_total_cost_diesel = annualized_capex_diesel + diesel_generator_opex + annual_fuel_cost
 
-            # Estimate annual electricity production from one diesel generator, then multiply:
+            # Estimate annual electricity production from the diesel generator (in kWh/year)
             annual_electricity_diesel = annual_fuel_consumption_diesel * diesel_generator_efficiency
-            annual_electricity_diesel_total = annual_electricity_diesel * number_diesel_generators
 
             # Diesel LCOE (€/kWh)
-            lcoe_diesel = annual_total_cost_diesel / annual_electricity_diesel_total if annual_electricity_diesel_total > 0 else float('inf')
-            
+            lcoe_diesel = annual_total_cost_diesel / annual_electricity_diesel if annual_electricity_diesel > 0 else float('inf')
+
             st.markdown("### Diesel Generator LCOE Calculation")
             st.metric("Diesel Generator LCOE (€/kWh)", f"{lcoe_diesel:.4f}")
-            
+
             diesel_lcoe_breakdown = pd.DataFrame({
                 "Metric": [
                     "Annualized CAPEX (€/year)",
                     "Annual OPEX (€/year)",
-                    "Annual Fuel Cost (€/year)", 
+                    "Annual Fuel Cost (€/year)",
                     "Annual Total Cost (€/year)",
                     "Annual Electricity Production (kWh/year)"
                 ],
@@ -985,6 +983,26 @@ else:
             })
             st.markdown("**Diesel Generator LCOE Breakdown:**")
             st.table(diesel_lcoe_breakdown)
+
+            # Diesel Generator LCOE Calculation – updated for multiple diesel generators:
+            r = interest_rate / 100
+            n = loan_years
+            CRF = (r * (1+r)**n) / ((1+r)**n - 1) if (1+r)**n - 1 != 0 else 0
+
+            # Annualized cost components for one diesel generator:
+            annualized_capex_diesel = diesel_generator_capex * CRF
+            annual_fuel_consumption_diesel = params["genset_fuel_per_hour"] * params["genset_operating_hours"] * operating_days_per_year  # (L/year) per unit
+            annual_fuel_cost = annual_fuel_consumption_diesel * diesel_fuel_cost
+            diesel_opex_total = diesel_generator_opex
+            # Now multiply each by the number of diesel generators:
+            total_annualized_capex_diesel = annualized_capex_diesel * number_diesel_generators
+            total_diesel_opex = diesel_opex_total * number_diesel_generators
+            total_annual_fuel_cost = annual_fuel_cost * number_diesel_generators
+            annual_total_cost_diesel = total_annualized_capex_diesel + total_diesel_opex + total_annual_fuel_cost
+
+            # Estimate annual electricity production from one diesel generator, then multiply:
+            annual_electricity_diesel = annual_fuel_consumption_diesel * diesel_generator_efficiency
+            annual_electricity_diesel_total = annual_electricity_diesel * number_diesel_generators
         
         with tab_visualizations:
             st.subheader("Cost Breakdown Visualization")
@@ -1001,9 +1019,10 @@ else:
             st.subheader("Payback Period")
             payback_chart = create_payback_period_chart(results["payback_years"])
             st.plotly_chart(payback_chart)
-
+        
         with tab_sensitivity:
             st.subheader("CO₂ Emissions Sensitivity Analysis")
+            
             sensitivity_param_options = {
                 "large_patrol_fuel": "Large Patrol Boat Fuel (L/h)",
                 "rib_fuel": "RIB Boat Fuel (L/h)",
@@ -1013,6 +1032,7 @@ else:
                 "co2_factor": "CO₂ Factor (kg CO₂/L)",
                 "maintenance_emissions": "Maintenance Emissions (kg CO₂)"
             }
+            
             sensitivity_settings = {
                 "large_patrol_fuel": {"min": 50, "max": 300, "step": 25},
                 "rib_fuel": {"min": 10, "max": 100, "step": 10},
@@ -1064,7 +1084,7 @@ else:
             with col1:
                 avoidance_chart = create_sensitivity_chart(
                     sensitivity_results, 
-                    sensitivity_param_options[selected_param], 
+                    sensitivity_param_options[selected_param],
                     'Absolute_Avoidance_All_Outposts', 
                     'Total Absolute GHG Emission Avoidance (tCO₂e/year)'
                 )
@@ -1090,15 +1110,24 @@ else:
                 sensitivity_param_options[selected_param]
             )
             st.plotly_chart(combined_chart, use_container_width=True)
-
+            
+            st.markdown("""
+            This chart shows how the Innovation Fund score changes with the parameter value. 
+            Higher scores (closer to 12) improve chances of funding. Scores are calculated based on the 
+            cost efficiency ratio (EUR/tonne CO₂ saved) using the formula:
+            
+            **Score = 12 - (12 × cost efficiency ratio / 2000)** when ratio ≤ 2000 EUR/t, **0** otherwise.
+            """)
+            
             st.subheader("Multi-Parameter Impact Analysis")
             st.markdown("Analyze the impact of multiple parameters simultaneously:")
             analyze_patrol_fuel = st.checkbox("Patrol Boat Fuel Consumption", value=True)
             analyze_operations = st.checkbox("Operational Parameters", value=True)
             analyze_emissions = st.checkbox("Emissions Parameters", value=True)
+            
             variation_pct = st.slider("Parameter Variation (%)", min_value=5, max_value=50, value=20, step=5,
                                   help="Percentage variation from the base case")
-
+            
             def calculate_impact(param):
                 params_high = params.copy()
                 params_low = params.copy()
@@ -1111,7 +1140,7 @@ else:
                     'Low_Value': low_result['ghg_abs_avoidance_all_outposts'] - base_avoidance,
                     'High_Value': high_result['ghg_abs_avoidance_all_outposts'] - base_avoidance
                 }
-
+            
             if st.button("Run Multi-Parameter Analysis"):
                 tornado_data = []
                 base_result = calculate_os4p(params)
@@ -1133,6 +1162,7 @@ else:
                     tornado_df = pd.DataFrame(tornado_data)
                     tornado_df['Total_Impact'] = tornado_df['High_Value'].abs() + tornado_df['Low_Value'].abs()
                     tornado_df = tornado_df.sort_values('Total_Impact', ascending=False)
+                    
                     fig = go.Figure()
                     fig.add_trace(go.Bar(
                         y=tornado_df['Parameter'],
@@ -1182,11 +1212,10 @@ else:
         r = interest_rate / 100
         n = loan_years
         CRF = (r * (1+r)**n) / ((1+r)**n - 1) if (1+r)**n - 1 != 0 else 0
-        total_capex_per_outpost = params["microgrid_capex"] + params["drones_capex"]
+        total_capex_per_outpost = params["microgrid_capex"] + params["drones_capex"] + params["bos_capex"]
         annualized_capex = total_capex_per_outpost * CRF
         annual_opex_per_outpost = results["annual_opex_per_outpost"]
         annual_energy = annual_energy_production
-        
         lcoe_breakdown = pd.DataFrame({
             "Metric": ["Annualized CAPEX per Outpost (€/year)", "Annual OPEX per Outpost (€/year)", "Annual Energy Production (kWh/year)"],
             "Value": [annualized_capex, annual_opex_per_outpost, annual_energy]
