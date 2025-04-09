@@ -579,6 +579,10 @@ else:
             else:
                 total_capex_per_outpost = st.number_input("Total CAPEX per Outpost", min_value=50000, max_value=500000, value=110000, step=5000, format="%d")
                 detailed_capex = None
+                # Define fallback values for individual CAPEX components
+                microgrid_capex = total_capex_per_outpost
+                drones_capex = 0
+                bos_capex = 0
             
          
             st.subheader("OPEX Inputs (€ per Outpost per Year)")
