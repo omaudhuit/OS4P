@@ -485,7 +485,11 @@ else:
             
             st.subheader("Vessel/Asset Count - Manned Scenario")
             num_large_patrol_boats = st.number_input("Number of Large Patrol Boats", min_value=0, max_value=10, value=1, step=1, format="%d")
-            num_rib_boats = st.number_input("Number of RIB Boats", min_value=0, max_value=10, value=1, step=1, format="%d")
+            num_rib_boats = st.number_input(
+                "Number of RIB Boats", 
+                min_value=0, max_value=10, value=1, step=1, format="%d", 
+                key="num_rib_boats_vessels"
+            )
             num_small_patrol_boats = st.number_input("Number of Small Patrol Boats", min_value=0, max_value=10, value=1, step=1, format="%d")
             num_ms240_gd_vehicles = st.number_input("Number of M/S 240 GD Patrol Vehicles", min_value=0, max_value=100, value=1, step=1, format="%d")
             
@@ -494,16 +498,11 @@ else:
            
             st.subheader("Fuel Consumption (Liters per Hour) - Manned Scenario")
             large_patrol_fuel = st.number_input("Large Patrol Boat Fuel (L/h)", min_value=50, max_value=300, value=150, step=10, format="%d")
-            num_rib_boats = st.number_input("Number of RIB Boats", min_value=0, max_value=10, value=1, step=1, format="%d")
-            num_small_patrol_boats = st.number_input("Number of Small Patrol Boats", min_value=0, max_value=10, value=1, step=1, format="%d")
-            num_ms240_gd_vehicles = st.number_input("Number of M/S 240 GD Patrol Vehicles", min_value=0, max_value=100, value=1, step=1, format="%d")
-            
-            # NEW: Add input for the number of diesel generators
-            number_diesel_generators = st.number_input("Number of Diesel Generators", min_value=1, max_value=50, value=1, step=1, format="%d")
-           
-            st.subheader("Fuel Consumption (Liters per Hour) - Manned Scenario")
-            large_patrol_fuel = st.number_input("Large Patrol Boat Fuel (L/h)", min_value=50, max_value=300, value=150, step=10, format="%d")
-            rib_fuel = st.number_input("RIB Boat Fuel (L/h)", min_value=10, max_value=100, value=50, step=5, format="%d")
+            rib_fuel = st.number_input(
+                "RIB Boat Fuel (L/h)", 
+                min_value=10, max_value=100, value=50, step=5, format="%d", 
+                key="rib_boat_fuel"
+            )
             small_patrol_fuel = st.number_input("Small Patrol Boat Fuel (L/h)", min_value=5, max_value=50, value=30, step=5, format="%d")
         
             hours_per_day_base = st.number_input("Patrol Hours per Day", min_value=4, max_value=24, value=8, step=1, format="%d")
