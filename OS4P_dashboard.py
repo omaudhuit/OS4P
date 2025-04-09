@@ -615,8 +615,9 @@ else:
             "num_large_patrol_boats": num_large_patrol_boats,
             "num_rib_boats": num_rib_boats,
             "num_small_patrol_boats": num_small_patrol_boats,
-            # NEW: Include the diesel generator count in parameters
             "number_diesel_generators": number_diesel_generators,
+            # Add the CAPEX value here:
+            "total_capex_per_outpost": total_capex_per_outpost
         }
         
         if show_capex_detail:
