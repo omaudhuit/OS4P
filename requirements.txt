@@ -11,3 +11,4 @@ fpdf
 npf
 px
 numpy-financial
+openpyxl
