@@ -544,7 +544,7 @@ else:
             
             st.subheader("CAPEX Summary (€ per Outpost)")
             show_capex_detail = st.checkbox("Show detailed CAPEX breakdown", value=False)
-            
+
             if show_capex_detail:
                 st.markdown("#### Detailed CAPEX Breakdown")
                 solar_pv_capex = st.number_input("Solar PV System (10kWp)", min_value=5000, max_value=50000, value=15000, step=1000, format="%d")
@@ -563,23 +563,18 @@ else:
                 bos_capex = st.number_input("Additional BOS/CONTINGENCY/OTHER CAPEX", min_value=0, max_value=100000, value=0, step=5000, format="%d")
                 
                 # Aggregated CAPEX is the sum of all detailed components:
-                total_capex_per_outpost = solar_pv_capex + wind_turbine_capex + battery_capex + telecom_capex + bos_micro_capex + install_capex + drones_capex_detail + bos_capex
+                total_capex_per_outpost = (solar_pv_capex + wind_turbine_capex + battery_capex +
+                                           telecom_capex + bos_micro_capex + install_capex +
+                                           drones_capex_detail + bos_capex)
                 st.markdown(f"**Total CAPEX per Outpost: €{total_capex_per_outpost:,}**")
                 
-                detailed_capex = {
-                    "Solar PV (10kWp)": solar_pv_capex,
-                    "Wind Turbine (3kW)": wind_turbine_capex,
-                    "Battery Storage (30kWh)": battery_capex,
-                    "Telecommunications": telecom_capex,
-                    "Microgrid BOS": bos_micro_capex,
-                    "Installation & Commissioning": install_capex,
-                    f"Drones ({drone_units}x)": drones_capex_detail,
-                    "Additional BOS": bos_capex
-                }
+                # Compute individual CAPEX components:
+                microgrid_capex = solar_pv_capex + wind_turbine_capex + battery_capex + telecom_capex + bos_micro_capex + install_capex
+                drones_capex = drones_capex_detail  # Already computed
             else:
                 total_capex_per_outpost = st.number_input("Total CAPEX per Outpost", min_value=50000, max_value=500000, value=110000, step=5000, format="%d")
                 detailed_capex = None
-                # Define fallback values for individual CAPEX components
+                # Define fallback values for individual CAPEX components:
                 microgrid_capex = total_capex_per_outpost
                 drones_capex = 0
                 bos_capex = 0
@@ -616,10 +611,10 @@ else:
             "num_rib_boats": num_rib_boats,
             "num_small_patrol_boats": num_small_patrol_boats,
             "number_diesel_generators": number_diesel_generators,
-            # Add the CAPEX value here:
+            # Add CAPEX value:
             "total_capex_per_outpost": total_capex_per_outpost
         }
-        
+
         if show_capex_detail:
             params["microgrid_capex"] = microgrid_capex
             params["drones_capex"] = drones_capex
@@ -631,7 +626,7 @@ else:
                 "Telecommunications": telecom_capex,
                 "Microgrid BOS": bos_micro_capex,
                 "Installation & Commissioning": install_capex,
-                f"Drones ({drone_units}x)": drones_capex,
+                f"Drones ({drone_units}x)": drones_capex_detail,
                 "Additional BOS": bos_capex
             }
         else:
