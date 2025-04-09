@@ -720,6 +720,12 @@ else:
             st.markdown(f"**Required OS4P Units: {required_units}**")
             
             st.subheader("Environmental Impact")
+            col_em1, col_em2 = st.columns(2)
+            with col_em1:
+                st.metric("Manned Emissions (tonnes/year)", f"{results['manned_co2_emissions']/1000:.1f}")
+            with col_em2:
+                st.metric("Autonomous Emissions (tonnes/year)", f"{results['autonomous_co2_emissions']/1000:.1f}")
+            
             col1, col2, col3 = st.columns(3)
             with col1:
                 st.metric("Total Absolute GHG Emission Avoidance (tCO₂e/year)", f"{results['ghg_abs_avoidance_total']:.1f}")
