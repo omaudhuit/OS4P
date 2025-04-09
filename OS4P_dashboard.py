@@ -690,13 +690,11 @@ else:
             st.subheader("Environmental Impact")
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.metric("Absolute GHG Emission Avoidance per Outpost (tCO₂e/year)", f"{results.get('ghg_abs_avoidance_per_outposts', results['ghg_abs_avoidance_per_outpost']):.1f}")
-            with col2:
                 st.metric("Total Absolute GHG Emission Avoidance (tCO₂e/year)", f"{results['ghg_abs_avoidance_all_outposts']:.1f}")
-            with col3:
+            with col2:
                 st.metric("Lifetime Absolute GHG Emission Avoidance (tCO₂e)", f"{results['ghg_abs_avoidance_lifetime']:.1f}")
-            
-            st.metric("Relative GHG Emission Avoidance (%)", f"{results['ghg_rel_avoidance']:.1f}")
+            with col3:
+                st.metric("Relative GHG Emission Avoidance (%)", f"{results['ghg_rel_avoidance']:.1f}")
             
             st.subheader("Cost Overview")
             col1, col2, col3 = st.columns(3)
