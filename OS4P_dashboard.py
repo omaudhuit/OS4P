@@ -739,10 +739,10 @@ else:
             st.markdown("#### Master Profit & Loss (P&L) Statement for Project Lifetime")
             # Break revenue into two components:
             fee_revenue = results["annual_fee_unit"] * num_outposts
-            maintenance_revenue = maintenance_opex * num_outposts  
+            maintenance_revenue = results["annual_opex_per_outpost"] * num_outposts  
             annual_revenue_total = fee_revenue + maintenance_revenue
 
-            # Operating expenses: using communications and security costs since maintenance is revenue.
+            # Operating expenses: using communications and security costs since maintenance is now revenue.
             annual_operating_expenses = (communications_opex + security_opex) * num_outposts
             gross_profit = annual_revenue_total - annual_operating_expenses
             interest_expense = results["debt"] * (interest_rate / 100)
