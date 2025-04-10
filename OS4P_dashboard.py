@@ -454,6 +454,7 @@ else:
             non_unit_cost_pct = st.number_input("Non-unit Cost (%)", min_value=0.0, max_value=100.0, value=25.0, step=0.1, format="%.1f")
             corporate_tax_rate = st.number_input("Corporate Tax Rate (%)", min_value=0.0, max_value=100.0, value=22.0, step=0.1, format="%.1f")
             cogs_pct = st.number_input("COGS as % of Total CAPEX", min_value=0.0, max_value=100.0, value=10.0, step=0.1, format="%.1f")
+            working_cap_pct = st.number_input("Working Capital as % of Revenue", min_value=0.0, max_value=20.0, value=5.0, step=0.1, format="%.1f")
             
             st.subheader("Asset Lifetime")
             lifetime_years = st.number_input("OS4P Unit Lifetime (years)", min_value=1, max_value=50, value=10, step=1, format="%d")
@@ -715,31 +716,12 @@ else:
             initial_investment = results["debt"]
             annual_revenue = (results["monthly_fee_unit"] * 12 * num_outposts) + (maintenance_opex * num_outposts)
             annual_debt_service = results["monthly_debt_payment"] * 12
-            annual_cash_flow = annual_revenue - annual_debt_service
-            st.metric("Annual Cash Flow (€)", f"{annual_cash_flow:,.0f}")
-            
-            npv = -initial_investment
-            discounted_cash_flows = []
-            for t in range(1, years + 1):
-                discounted_cf = annual_cash_flow / ((1 + discount_rate) ** t)
-                discounted_cash_flows.append(discounted_cf)
-                npv += discounted_cf
-            st.metric("NPV (€)", f"{npv:,.0f}")
-            
             year_list = list(range(1, years + 1))
-            undiscounted_cash_flows = [annual_cash_flow] * years
             
             fig = go.Figure()
             fig.add_trace(go.Scatter(
                 x=year_list,
-                y=undiscounted_cash_flows,
-                mode='lines+markers',
-                name='Undiscounted Cash Flow',
-                line=dict(color='blue', dash='dot')
-            ))
-            fig.add_trace(go.Scatter(
-                x=year_list,
-                y=discounted_cash_flows,
+                y=[annual_revenue - annual_debt_service] * years,
                 mode='lines+markers',
                 name='Discounted Cash Flow',
                 line=dict(color='green')
@@ -752,83 +734,59 @@ else:
             )
             st.plotly_chart(fig, use_container_width=True)
             
-            # ----------------- NEW: Additional financial model details -----------------
-            st.markdown("#### WACC Calculation")
-            # Simplified WACC calculation (using assumed cost of equity and tax rate)
-            cost_of_debt = interest_rate / 100  # using the given interest rate
-            cost_of_equity = 0.08  # assume 8% for cost of equity
-            debt_ratio = 0.40
-            equity_ratio = 0.60
-            tax_rate = corporate_tax_rate / 100  # using the given corporate tax rate
-            wacc = (debt_ratio * cost_of_debt * (1 - tax_rate)) + (equity_ratio * cost_of_equity)
-            st.metric("WACC", f"{wacc*100:.1f}%")
-            
-            st.markdown("#### Detailed Revenue Stream Breakdown")
-            revenue_streams = {
-                "Monthly Fees": results["monthly_fee_unit"] * 12 * num_outposts,
-                "Maintenance Revenue": maintenance_opex * num_outposts
-            }
-            rev_df = pd.DataFrame({
-                "Revenue Stream": list(revenue_streams.keys()),
-                "Annual Revenue (€)": list(revenue_streams.values())
-            })
-            st.table(rev_df)
-            
-            st.markdown("#### Cost Breakdown")
-            # For illustration, we assume:
-            cogs = results["total_capex"] * (cogs_pct / 100)
-            opex_total = results["annual_opex"]
-            sgna = results["total_capex"] * 0.05       # 5% of total CAPEX
-            cost_breakdown = {
-                "COGS": cogs,
-                "Operating Expenses": opex_total,
-                "SG&A Expenses": sgna
-            }
-            cost_df = pd.DataFrame({
-                "Cost Category": list(cost_breakdown.keys()),
-                "Annual Cost (€)": list(cost_breakdown.values())
-            })
-            st.table(cost_df)
-            # -----------------------------------------------------------------------------
-            
-            # Optionally, you may include a table of discounted cash flows as well:
-            dcf_table = pd.DataFrame({
-                "Year": year_list,
-                "Discounted Cash Flow (€)": discounted_cash_flows,
-                "Undiscounted Cash Flow (€)": undiscounted_cash_flows
-            })
-            st.table(dcf_table)
-
-            st.markdown("#### Consolidated Lifetime Financials")
-            # Calculate annual figures:
+            # --------------------- NEW: Master P&L Statement ---------------------
+            st.markdown("#### Master Profit & Loss (P&L) Statement for Project Lifetime")
             annual_revenue_total = (results["monthly_fee_unit"] * 12 * num_outposts) + (maintenance_opex * num_outposts)
-            annual_debt_service = results["monthly_debt_payment"] * 12
-            annual_operating_cost = results["annual_opex"]  # Already aggregated for all outposts
-            total_expenses = annual_operating_cost + annual_debt_service
-            profit_before_tax = annual_revenue_total - total_expenses
-            tax = profit_before_tax * (corporate_tax_rate / 100) if profit_before_tax > 0 else 0
-            annual_free_cash_flow = profit_before_tax - tax
+            annual_operating_expenses = maintenance_opex * num_outposts
+            gross_profit = annual_revenue_total - annual_operating_expenses
+            interest_expense = results["debt"] * (interest_rate / 100)
+            profit_before_tax = gross_profit - interest_expense
+            tax_amount = profit_before_tax * (corporate_tax_rate / 100) if profit_before_tax > 0 else 0
+            net_profit = profit_before_tax - tax_amount
 
-            # Consolidate for each year of the project lifetime:
-            years_lifetime = lifetime_years
-            years_list = list(range(1, years_lifetime + 1))
-            revenues = [annual_revenue_total] * years_lifetime
-            expenses = [total_expenses] * years_lifetime
-            profits = [profit_before_tax] * years_lifetime
-            taxes = [tax] * years_lifetime
-            free_cash_flows = [annual_free_cash_flow] * years_lifetime
-            cumulative_fcf = np.cumsum(free_cash_flows)
-
-            lifetime_df = pd.DataFrame({
-                "Year": years_list,
-                "Revenue (€)": revenues,
-                "Expenses (€)": expenses,
-                "Profit Before Tax (€)": profits,
-                "Tax (€)": taxes,
-                "Free Cash Flow (€)": free_cash_flows,
-                "Cumulative Free Cash Flow (€)": cumulative_fcf
+            lifetime_years = params["lifetime_years"]
+            pl_years = list(range(1, lifetime_years + 1))
+            pl_df = pd.DataFrame({
+                "Year": pl_years,
+                "Revenue (€)": [annual_revenue_total] * lifetime_years,
+                "Operating Expenses (€)": [annual_operating_expenses] * lifetime_years,
+                "Gross Profit (€)": [gross_profit] * lifetime_years,
+                "Interest Expense (€)": [interest_expense] * lifetime_years,
+                "Profit Before Tax (€)": [profit_before_tax] * lifetime_years,
+                "Tax (€)": [tax_amount] * lifetime_years,
+                "Net Profit (€)": [net_profit] * lifetime_years
             })
-            st.table(lifetime_df)
+            st.table(pl_df)
+            
+            # --------------------- NEW: Cash Flow Statement ---------------------
+            st.markdown("#### Cash Flow Statement")
+            working_capital_need = annual_revenue_total * (working_cap_pct / 100)
+            cf_operating = net_profit - working_capital_need
+            cf_investing = -results["total_capex"]
+            cf_financing = []
+            for y in range(1, lifetime_years + 1):
+                if y == 1:
+                    cf_financing.append(results["debt"])
+                elif y <= loan_years:
+                    cf_financing.append(- (results["monthly_debt_payment"] * 12))
+                else:
+                    cf_financing.append(0)
+            total_cf = []
+            for i, y in enumerate(pl_years):
+                if y == 1:
+                    total_cf.append(cf_operating + cf_investing + cf_financing[i])
+                else:
+                    total_cf.append(cf_operating + cf_financing[i])
+            
+            cash_flow_df = pd.DataFrame({
+                "Year": pl_years,
+                "Operating CF (€)": [cf_operating] * lifetime_years,
+                "Investing CF (€)": [cf_investing if y == 1 else 0 for y in pl_years],
+                "Financing CF (€)": cf_financing,
+                "Total CF (€)": total_cf,
+                "Working Capital Need (€)": [working_capital_need] * lifetime_years
+            })
+            st.table(cash_flow_df)
         
         with tab_lcoe:
             st.header("LCOE Calculation")
