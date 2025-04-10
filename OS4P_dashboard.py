@@ -739,8 +739,8 @@ else:
             st.markdown("#### Master Profit & Loss (P&L) Statement for Project Lifetime")
             # Revenue breakdown:
             fee_revenue = results["annual_fee_unit"] * num_outposts
-            # Use the user-defined maintenance fee per outpost (maintenance_opex) as maintenance revenue
-            maintenance_revenue = maintenance_opex * num_outposts  
+            # Use the client's annual OPEX per Outpost (€/year) as the maintenance revenue
+            maintenance_revenue = results["annual_opex_per_outpost"] * num_outposts  
             annual_revenue_total = fee_revenue + maintenance_revenue
 
             # Operating expenses for the company:
@@ -748,7 +748,7 @@ else:
             maintenance_cost = 0.75 * maintenance_revenue
             # - SG&A: 30% of the maintenance cost
             sg_and_a = 0.30 * maintenance_cost
-            # Total operating expense for the company:
+            # Total operating expenses:
             operating_expenses = maintenance_cost + sg_and_a
 
             gross_profit = annual_revenue_total - operating_expenses
