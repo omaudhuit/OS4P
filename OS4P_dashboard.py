@@ -276,6 +276,14 @@ else:
         fig.update_layout(title="Cost Breakdown")
         return fig
 
+    def create_co2_comparison_chart(co2_factors):
+        import plotly.graph_objects as go
+        labels = list(co2_factors.keys())
+        values = list(co2_factors.values())
+        fig = go.Figure(data=[go.Bar(x=labels, y=values, text=values, textposition='auto')])
+        fig.update_layout(title="CO₂ Emissions Comparison", yaxis_title="Emissions (tonnes)")
+        return fig
+
     def main():
         st.title("OS4P Green Sentinel")
         st.markdown("### Configure Your OS4P System Below")
