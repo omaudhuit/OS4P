@@ -395,7 +395,20 @@ else:
         with st.sidebar:
             st.header("User Inputs")
             st.subheader("System Configuration")
-            num_outposts = st.number_input("Number of Outposts - Autonomous OS4P", min_value=1, max_value=1000, value=100, step=1, format="%d")
+            maritime_outposts = st.number_input(
+                "Number of Outposts for Maritime Border Coverage",
+                min_value=0, max_value=1000, value=30, step=1, format="%d"
+            )
+            land_border_outposts = st.number_input(
+                "Number of Outposts for Land Border Coverage",
+                min_value=0, max_value=1000, value=40, step=1, format="%d"
+            )
+            interior_outposts = st.number_input(
+                "Number of Outposts for Interior Strategic Locations",
+                min_value=0, max_value=1000, value=30, step=1, format="%d"
+            )
+            num_outposts = maritime_outposts + land_border_outposts + interior_outposts
+            st.markdown(f"**Total Number of Outposts: {num_outposts}**")
             
             st.subheader("Vessel/Asset Count - Manned Scenario")
             num_large_patrol_boats = st.number_input("Number of Large Patrol Boats", min_value=0, max_value=10, value=1, step=1, format="%d")
