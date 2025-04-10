@@ -735,11 +735,14 @@ else:
             )
             st.plotly_chart(fig, use_container_width=True)
             
-            # --------------------- NEW: Master P&L Statement ---------------------
+            # --------------------- NEW: Master Profit & Loss (P&L) Statement ---------------------
             st.markdown("#### Master Profit & Loss (P&L) Statement for Project Lifetime")
-            # Use the corrected revenue calculation:
-            annual_revenue_total = (results["annual_fee_unit"] + maintenance_opex) * num_outposts
-            annual_operating_expenses = maintenance_opex * num_outposts
+            # Break revenue into two components:
+            fee_revenue = results["annual_fee_unit"] * num_outposts
+            maintenance_revenue = maintenance_opex * num_outposts  
+            annual_revenue_total = fee_revenue + maintenance_revenue
+            # Operating expenses: Here we use the other OPEX inputs (communications + security) since maintenance is revenue.
+            annual_operating_expenses = (communications_opex + security_opex) * num_outposts
             gross_profit = annual_revenue_total - annual_operating_expenses
             interest_expense = results["debt"] * (interest_rate / 100)
             profit_before_tax = gross_profit - interest_expense
@@ -750,7 +753,9 @@ else:
             pl_years = list(range(1, lifetime_years + 1))
             pl_df = pd.DataFrame({
                 "Year": pl_years,
-                "Revenue (€)": [annual_revenue_total] * lifetime_years,
+                "Unit Fee Revenue (€)": [fee_revenue] * lifetime_years,
+                "Maintenance Revenue (€)": [maintenance_revenue] * lifetime_years,
+                "Total Revenue (€)": [annual_revenue_total] * lifetime_years,
                 "Operating Expenses (€)": [annual_operating_expenses] * lifetime_years,
                 "Gross Profit (€)": [gross_profit] * lifetime_years,
                 "Interest Expense (€)": [interest_expense] * lifetime_years,
