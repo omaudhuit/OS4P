@@ -195,6 +195,22 @@ else:
 
         return result
 
+    def perform_sensitivity_analysis(params, selected_param, range_values):
+        import pandas as pd
+        sensitivity_data = []
+        for value in range_values:
+            new_params = params.copy()
+            new_params[selected_param] = value
+            result = calculate_os4p(new_params)
+            sensitivity_data.append({
+                'Parameter_Value': value,
+                'Absolute_Avoidance_Total': result['ghg_abs_avoidance_total'],
+                'Manned_CO2_Emissions': result['manned_co2_emissions'],
+                'Autonomous_CO2_Emissions': result['autonomous_co2_emissions'],
+                'Relative_Avoidance': result['ghg_rel_avoidance']
+            })
+        return pd.DataFrame(sensitivity_data)
+
     def generate_pdf(results, params, lcoe_breakdown):
         pdf = FPDF()
         pdf.unifontsubset = False
