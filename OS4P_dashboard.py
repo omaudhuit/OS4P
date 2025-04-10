@@ -119,7 +119,7 @@ else:
         lifetime_debt_payment = monthly_debt_payment * num_months
 
         sla_multiplier = 1 + sla_premium / 100
-        monthly_fee_unit = ((monthly_debt_payment / num_outposts) + (annual_opex_per_outpost / 12)) * sla_multiplier
+        monthly_fee_unit = (monthly_debt_payment / num_outposts) * sla_multiplier
         annual_fee_unit = monthly_fee_unit * 12
         lifetime_fee_total = annual_fee_unit * num_outposts * loan_years
 
