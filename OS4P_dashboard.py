@@ -397,15 +397,15 @@ else:
             st.subheader("System Configuration")
             maritime_outposts = st.number_input(
                 "Number of Outposts for Maritime Border Coverage",
-                min_value=0, max_value=1000, value=30, step=1, format="%d"
+                min_value=0, max_value=1000, value=15, step=1, format="%d"
             )
             land_border_outposts = st.number_input(
                 "Number of Outposts for Land Border Coverage",
-                min_value=0, max_value=1000, value=40, step=1, format="%d"
+                min_value=0, max_value=1000, value=20, step=1, format="%d"
             )
             interior_outposts = st.number_input(
                 "Number of Outposts for Interior Strategic Locations",
-                min_value=0, max_value=1000, value=30, step=1, format="%d"
+                min_value=0, max_value=1000, value=15, step=1, format="%d"
             )
             num_outposts = maritime_outposts + land_border_outposts + interior_outposts
             st.markdown(f"**Total Number of Outposts: {num_outposts}**")
