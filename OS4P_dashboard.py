@@ -737,14 +737,21 @@ else:
             
             # --------------------- NEW: Master Profit & Loss (P&L) Statement ---------------------
             st.markdown("#### Master Profit & Loss (P&L) Statement for Project Lifetime")
-            # Break revenue into two components:
+            # Revenue breakdown:
             fee_revenue = results["annual_fee_unit"] * num_outposts
-            maintenance_revenue = results["annual_opex_per_outpost"] * num_outposts  
+            # Use the user-defined maintenance fee per outpost (maintenance_opex) as maintenance revenue
+            maintenance_revenue = maintenance_opex * num_outposts  
             annual_revenue_total = fee_revenue + maintenance_revenue
 
-            # Operating expenses: using communications and security costs since maintenance is now revenue.
-            annual_operating_expenses = (communications_opex + security_opex) * num_outposts
-            gross_profit = annual_revenue_total - annual_operating_expenses
+            # Operating expenses for the company:
+            # - Maintenance cost: 75% of the maintenance revenue (cost to provide maintenance)
+            maintenance_cost = 0.75 * maintenance_revenue
+            # - SG&A: 30% of the maintenance cost
+            sg_and_a = 0.30 * maintenance_cost
+            # Total operating expense for the company:
+            operating_expenses = maintenance_cost + sg_and_a
+
+            gross_profit = annual_revenue_total - operating_expenses
             interest_expense = results["debt"] * (interest_rate / 100)
             profit_before_tax = gross_profit - interest_expense
             tax_amount = profit_before_tax * (corporate_tax_rate / 100) if profit_before_tax > 0 else 0
@@ -757,7 +764,7 @@ else:
                 "Unit Fee Revenue (€)": [fee_revenue] * lifetime_years,
                 "Maintenance Revenue (€)": [maintenance_revenue] * lifetime_years,
                 "Total Revenue (€)": [annual_revenue_total] * lifetime_years,
-                "Operating Expenses (€)": [annual_operating_expenses] * lifetime_years,
+                "Operating Expenses (€)": [operating_expenses] * lifetime_years,
                 "Gross Profit (€)": [gross_profit] * lifetime_years,
                 "Interest Expense (€)": [interest_expense] * lifetime_years,
                 "Profit Before Tax (€)": [profit_before_tax] * lifetime_years,
