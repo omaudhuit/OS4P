@@ -813,12 +813,11 @@ else:
             operating_expenses = maintenance_cost + sg_and_a
 
             gross_profit = annual_revenue_total - operating_expenses
-            interest_expense = results["debt"] * (interest_rate / 100)
-            profit_before_tax = gross_profit - interest_expense
-            tax_amount = profit_before_tax * (corporate_tax_rate / 100) if profit_before_tax > 0 else 0
-            net_profit = profit_before_tax - tax_amount
+            interest_expense = [results["debt"] * (interest_rate / 100) if year <= loan_years else 0 for year in range(1, lifetime_years + 1)]
+            profit_before_tax = [gross_profit - expense for expense in interest_expense]
+            tax_amount = [profit * (corporate_tax_rate / 100) if profit > 0 else 0 for profit in profit_before_tax]
+            net_profit = [profit - tax for profit, tax in zip(profit_before_tax, tax_amount)]
 
-            lifetime_years = params["lifetime_years"]
             pl_years = list(range(1, lifetime_years + 1))
             pl_df = pd.DataFrame({
                 "Year": pl_years,
@@ -827,17 +826,17 @@ else:
                 "Total Revenue (€)": [annual_revenue_total] * lifetime_years,
                 "Operating Expenses (€)": [operating_expenses] * lifetime_years,
                 "Gross Profit (€)": [gross_profit] * lifetime_years,
-                "Interest Expense (€)": [interest_expense] * lifetime_years,
-                "Profit Before Tax (€)": [profit_before_tax] * lifetime_years,
-                "Tax (€)": [tax_amount] * lifetime_years,
-                "Net Profit (€)": [net_profit] * lifetime_years
+                "Interest Expense (€)": interest_expense,
+                "Profit Before Tax (€)": profit_before_tax,
+                "Tax (€)": tax_amount,
+                "Net Profit (€)": net_profit
             })
             st.table(pl_df)
             
             # --------------------- NEW: Cash Flow Statement ---------------------
             st.markdown("#### Cash Flow Statement")
             working_capital_need = annual_revenue_total * (working_cap_pct / 100)
-            cf_operating = net_profit - working_capital_need
+            cf_operating = [profit - working_capital_need for profit in net_profit]
             cf_investing = -results["total_capex"]
             cf_financing = []
             for y in range(1, lifetime_years + 1):
@@ -850,13 +849,13 @@ else:
             total_cf = []
             for i, y in enumerate(pl_years):
                 if y == 1:
-                    total_cf.append(cf_operating + cf_investing + cf_financing[i])
+                    total_cf.append(cf_operating[i] + cf_investing + cf_financing[i])
                 else:
-                    total_cf.append(cf_operating + cf_financing[i])
+                    total_cf.append(cf_operating[i] + cf_financing[i])
             
             cash_flow_df = pd.DataFrame({
                 "Year": pl_years,
-                "Operating CF (€)": [cf_operating] * lifetime_years,
+                "Operating CF (€)": cf_operating,
                 "Investing CF (€)": [cf_investing if y == 1 else 0 for y in pl_years],
                 "Financing CF (€)": cf_financing,
                 "Total CF (€)": total_cf,
