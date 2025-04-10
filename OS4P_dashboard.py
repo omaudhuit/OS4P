@@ -284,6 +284,26 @@ else:
         fig.update_layout(title="CO₂ Emissions Comparison", yaxis_title="Emissions (tonnes)")
         return fig
 
+    def create_payback_period_chart(payback_years):
+        import plotly.graph_objects as go
+        fig = go.Figure()
+        # Display the payback period as a labeled marker on a simple chart
+        fig.add_trace(go.Scatter(
+            x=[payback_years],
+            y=[0],
+            mode='markers+text',
+            marker=dict(size=20, color='orange'),
+            text=[f"{payback_years:.1f} years"],
+            textposition='top center'
+        ))
+        fig.update_layout(
+            title="Payback Period",
+            xaxis_title="Payback Period (Years)",
+            yaxis=dict(visible=False),
+            showlegend=False
+        )
+        return fig
+
     def main():
         st.title("OS4P Green Sentinel")
         st.markdown("### Configure Your OS4P System Below")
