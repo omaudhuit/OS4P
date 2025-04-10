@@ -457,7 +457,7 @@ else:
             working_cap_pct = st.number_input("Working Capital as % of Revenue", min_value=0.0, max_value=20.0, value=5.0, step=0.1, format="%.1f")
             
             st.subheader("Asset Lifetime")
-            lifetime_years = st.number_input("OS4P Unit Lifetime (years)", min_value=1, max_value=50, value=10, step=1, format="%d")
+            lifetime_years = st.number_input("OS4P Unit Lifetime (years)", min_value=1, max_value=50, value=20, step=1, format="%d")
             
             st.subheader("OS4P Emissions")
             maintenance_emissions = st.number_input("Maintenance Emissions (kg CO₂)", min_value=500, max_value=20000, value=1594, step=10, format="%d")
