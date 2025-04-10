@@ -320,6 +320,74 @@ else:
         )
         return fig
 
+    def create_sensitivity_chart(df, parameter_name, y_col, y_label):
+        import plotly.express as px
+        fig = px.line(
+            df,
+            x='Parameter_Value',
+            y=y_col,
+            title=f"Sensitivity Analysis: {parameter_name}",
+            labels={'Parameter_Value': parameter_name, y_col: y_label}
+        )
+        return fig
+
+    def create_emissions_sensitivity_chart(df, parameter_name):
+        import plotly.express as px
+        fig = px.line(
+            df,
+            x='Parameter_Value',
+            y='Manned_CO2_Emissions',
+            title=f"Emissions Sensitivity: {parameter_name}",
+            labels={'Parameter_Value': parameter_name, 'Manned_CO2_Emissions': 'Manned CO₂ Emissions (kg/year)'}
+        )
+        fig.add_scatter(x=df['Parameter_Value'], y=df['Autonomous_CO2_Emissions'], mode='lines', name='Autonomous CO₂ Emissions')
+        return fig
+
+    def create_innovation_fund_score_chart(df, parameter_name):
+        import plotly.express as px
+        fig = px.line(
+            df,
+            x='Parameter_Value',
+            y='Relative_Avoidance',
+            title=f"Innovation Fund Score Sensitivity: {parameter_name}",
+            labels={'Parameter_Value': parameter_name, 'Relative_Avoidance': 'Relative GHG Avoidance (%)'}
+        )
+        return fig
+
+    def create_combined_sensitivity_graph(df, parameter_name):
+        import plotly.graph_objects as go
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=df['Parameter_Value'],
+            y=df['Absolute_Avoidance_Total'],
+            mode='lines+markers',
+            name='Absolute Avoidance'
+        ))
+        fig.add_trace(go.Scatter(
+            x=df['Parameter_Value'],
+            y=df['Manned_CO2_Emissions'],
+            mode='lines+markers',
+            name='Manned CO₂ Emissions'
+        ))
+        fig.add_trace(go.Scatter(
+            x=df['Parameter_Value'],
+            y=df['Autonomous_CO2_Emissions'],
+            mode='lines+markers',
+            name='Autonomous CO₂ Emissions'
+        ))
+        fig.add_trace(go.Scatter(
+            x=df['Parameter_Value'],
+            y=df['Relative_Avoidance'],
+            mode='lines+markers',
+            name='Relative Avoidance (%)'
+        ))
+        fig.update_layout(
+            title=f"Combined Sensitivity Analysis: {parameter_name}",
+            xaxis_title=parameter_name,
+            yaxis_title="Values"
+        )
+        return fig
+
     def main():
         st.title("OS4P Green Sentinel")
         st.markdown("### Configure Your OS4P System Below")
