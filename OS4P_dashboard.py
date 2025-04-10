@@ -264,6 +264,18 @@ else:
         pdf_bytes = pdf.output(dest="S").encode("latin1", errors="replace")
         return pdf_bytes
 
+    def create_cost_breakdown_chart(capex_breakdown, opex_breakdown, detailed_capex=None):
+        import plotly.graph_objects as go
+        labels = list(capex_breakdown.keys()) + list(opex_breakdown.keys())
+        values = list(capex_breakdown.values()) + list(opex_breakdown.values())
+        # Merge detailed CAPEX if provided
+        if detailed_capex:
+            labels += list(detailed_capex.keys())
+            values += list(detailed_capex.values())
+        fig = go.Figure(data=[go.Pie(labels=labels, values=values)])
+        fig.update_layout(title="Cost Breakdown")
+        return fig
+
     def main():
         st.title("OS4P Green Sentinel")
         st.markdown("### Configure Your OS4P System Below")
