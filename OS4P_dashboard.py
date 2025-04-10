@@ -452,6 +452,7 @@ else:
             loan_years = st.number_input("Project Loan Years (for financial calculations)", min_value=3, max_value=25, value=10, step=1, format="%d")
             sla_premium = st.number_input("SLA Premium (%)", min_value=0.0, max_value=50.0, value=10.0, step=1.0, format="%.1f")
             non_unit_cost_pct = st.number_input("Non-unit Cost (%)", min_value=0.0, max_value=100.0, value=25.0, step=0.1, format="%.1f")
+            corporate_tax_rate = st.number_input("Corporate Tax Rate (%)", min_value=0.0, max_value=100.0, value=22.0, step=0.1, format="%.1f")
             cogs_pct = st.number_input("COGS as % of Total CAPEX", min_value=0.0, max_value=100.0, value=10.0, step=0.1, format="%.1f")
             
             st.subheader("Asset Lifetime")
@@ -527,6 +528,7 @@ else:
             "loan_years": loan_years,
             "sla_premium": sla_premium,
             "non_unit_cost_pct": non_unit_cost_pct,
+            "corporate_tax_rate": corporate_tax_rate,
             "lifetime_years": lifetime_years,
             "operating_days_per_year": operating_days_per_year,
             "co2_factor": co2_factor,
@@ -757,7 +759,7 @@ else:
             cost_of_equity = 0.08  # assume 8% for cost of equity
             debt_ratio = 0.40
             equity_ratio = 0.60
-            tax_rate = 0.25  # assume 25% tax rate
+            tax_rate = corporate_tax_rate / 100  # using the given corporate tax rate
             wacc = (debt_ratio * cost_of_debt * (1 - tax_rate)) + (equity_ratio * cost_of_equity)
             st.metric("WACC", f"{wacc*100:.1f}%")
             
@@ -796,6 +798,37 @@ else:
                 "Undiscounted Cash Flow (€)": undiscounted_cash_flows
             })
             st.table(dcf_table)
+
+            st.markdown("#### Consolidated Lifetime Financials")
+            # Calculate annual figures:
+            annual_revenue_total = (results["monthly_fee_unit"] * 12 * num_outposts) + (maintenance_opex * num_outposts)
+            annual_debt_service = results["monthly_debt_payment"] * 12
+            annual_operating_cost = results["annual_opex"]  # Already aggregated for all outposts
+            total_expenses = annual_operating_cost + annual_debt_service
+            profit_before_tax = annual_revenue_total - total_expenses
+            tax = profit_before_tax * (corporate_tax_rate / 100) if profit_before_tax > 0 else 0
+            annual_free_cash_flow = profit_before_tax - tax
+
+            # Consolidate for each year of the project lifetime:
+            years_lifetime = lifetime_years
+            years_list = list(range(1, years_lifetime + 1))
+            revenues = [annual_revenue_total] * years_lifetime
+            expenses = [total_expenses] * years_lifetime
+            profits = [profit_before_tax] * years_lifetime
+            taxes = [tax] * years_lifetime
+            free_cash_flows = [annual_free_cash_flow] * years_lifetime
+            cumulative_fcf = np.cumsum(free_cash_flows)
+
+            lifetime_df = pd.DataFrame({
+                "Year": years_list,
+                "Revenue (€)": revenues,
+                "Expenses (€)": expenses,
+                "Profit Before Tax (€)": profits,
+                "Tax (€)": taxes,
+                "Free Cash Flow (€)": free_cash_flows,
+                "Cumulative Free Cash Flow (€)": cumulative_fcf
+            })
+            st.table(lifetime_df)
         
         with tab_lcoe:
             st.header("LCOE Calculation")
