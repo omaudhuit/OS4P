@@ -109,9 +109,9 @@ else:
         non_unit_cost = pilot_markup * (non_unit_cost_pct / 100)
         total_pilot_cost = pilot_markup + non_unit_cost
 
-        grant_coverage = 0.60
-        total_grant = grant_coverage * total_pilot_cost
-        debt = total_pilot_cost - total_grant
+        # Financing: 60% by grant, 40% by loan
+        total_grant = 0.60 * total_pilot_cost
+        debt = 0.40 * total_pilot_cost
 
         monthly_interest_rate = interest_rate / 100 / 12
         num_months = loan_years * 12
@@ -244,272 +244,6 @@ else:
         pdf.cell(0, 10, f"Total Pilot Cost with Markup (€): {results['pilot_markup']:,.0f}", ln=True)
         pdf.cell(0, 10, f"Non-unit Cost (€): {results['non_unit_cost']:,.0f}", ln=True)
         pdf.cell(0, 10, f"Total Pilot Cost (with Overhead) (€): {results['total_pilot_cost']:,.0f}", ln=True)
-        pdf.cell(0, 10, f"Grant Coverage (€): {results['total_grant']:,.0f}", ln=True)
-        pdf.cell(0, 10, f"Debt Financing Required (€): {results['debt']:,.0f}", ln=True)
-        pdf.cell(0, 10, f"Payback Period (years): {results['payback_years']:.1f}", ln=True)
-        
-        pdf.ln(5)
-        pdf.set_font("DejaVu", "B", 14)
-        pdf.cell(0, 10, "LCOE Calculation", ln=True)
-        pdf.set_font("DejaVu", "", 12)
-        pdf.cell(0, 10, f"LCOE (€/kWh): {results['lcoe']:.4f}", ln=True)
-        
-        pdf.ln(5)
-        pdf.set_font("DejaVu", "B", 12)
-        pdf.cell(0, 10, "Calculation Breakdown:", ln=True)
-        pdf.set_font("DejaVu", "", 12)
-        for index, row in lcoe_breakdown.iterrows():
-            pdf.cell(0, 10, f"{row['Metric']}: {row['Value']:.2f}", ln=True)
-        
-        pdf_bytes = pdf.output(dest="S").encode("latin1", errors="replace")
-        return pdf_bytes
-
-    def create_cost_breakdown_chart(capex_data, opex_data, detailed_capex=None):
-        if detailed_capex is not None:
-            capex_detailed_df = pd.DataFrame(list(detailed_capex.items()), columns=['Category', 'Value'])
-            capex_detailed_df['Type'] = 'CAPEX (Detailed)'
-            opex_df = pd.DataFrame(list(opex_data.items()), columns=['Category', 'Value'])
-            opex_df['Type'] = 'OPEX (Annual)'
-            combined_df = pd.concat([capex_detailed_df, opex_df])
-        else:
-            capex_df = pd.DataFrame(list(capex_data.items()), columns=['Category', 'Value'])
-            capex_df['Type'] = 'CAPEX'
-            opex_df = pd.DataFrame(list(opex_data.items()), columns=['Category', 'Value'])
-            opex_df['Type'] = 'OPEX (Annual)'
-            combined_df = pd.concat([capex_df, opex_df])
-        
-        fig = px.bar(
-            combined_df, 
-            x='Category', 
-            y='Value', 
-            color='Type', 
-            title='Cost Breakdown', 
-            labels={'Value': 'Cost (€)', 'Category': ''}
-        )
-        fig.update_layout(barmode='group')
-        return fig
-
-    def create_co2_comparison_chart(co2_data):
-        labels = list(co2_data.keys())
-        values = list(co2_data.values())
-        fig = go.Figure(data=[go.Bar(
-            x=labels,
-            y=values,
-            marker_color=['#ff9999', '#66b3ff']
-        )])
-        fig.update_layout(
-            title_text='CO₂ Emissions Comparison (tonnes/year)',
-            yaxis_title='CO₂ (tonnes)',
-        )
-        savings = values[0] - values[1]
-        savings_percentage = (savings / values[0]) * 100 if values[0] > 0 else 0
-        fig.add_annotation(
-            x=0.5,
-            y=max(values) * 1.1,
-            text=f"Savings: {savings:.1f} tonnes ({savings_percentage:.1f}%)",
-            showarrow=False,
-            font=dict(size=14)
-        )
-        return fig
-
-    def create_payback_period_chart(payback_years):
-        display_value = payback_years if payback_years != float('inf') else 0
-        gauge_range = [0, max(10, display_value + 1)]
-        fig = go.Figure(go.Indicator(
-            mode="number+gauge",
-            value=display_value,
-            title={"text": "Payback Period (years)"},
-            gauge={'axis': {'range': gauge_range},
-                   'bar': {'color': "darkblue"}}
-        ))
-        fig.update_layout(margin=dict(t=0, b=0, l=0, r=0))
-        return fig
-
-    def perform_sensitivity_analysis(base_params, sensitivity_param, range_values):
-        results = []
-        for value in range_values:
-            params_copy = base_params.copy()
-            params_copy[sensitivity_param] = value
-            result = calculate_os4p(params_copy)
-            results.append({
-                'Parameter_Value': value,
-                'Absolute_Avoidance_Total': result['ghg_abs_avoidance_total'],
-                'Manned_CO2_Emissions': result['manned_co2_emissions'] / 1000,
-                'Autonomous_CO2_Emissions': result['autonomous_co2_emissions'] / 1000,
-                'Relative_Avoidance': result['ghg_rel_avoidance'],
-                'Cost_Efficiency': result['cost_efficiency_per_ton'],
-                'Innovation_Fund_Score': result['innovation_fund_score']
-            })
-        return pd.DataFrame(results)
-
-    def create_sensitivity_chart(sensitivity_data, param_name, y_column, y_label):
-        fig = px.line(
-            sensitivity_data, 
-            x='Parameter_Value', 
-            y=y_column,
-            markers=True,
-            title=f'Sensitivity of {y_label} to {param_name}',
-            labels={'Parameter_Value': param_name, y_column: y_label}
-        )
-        fig.update_layout(
-            xaxis_title=param_name,
-            yaxis_title=y_label,
-            hovermode="x unified"
-        )
-        return fig
-
-    def create_innovation_fund_score_chart(sensitivity_data, param_name):
-        innovation_scores = []
-        for index, row in sensitivity_data.iterrows():
-            if row['Absolute_Avoidance_Total'] > 0:
-                ce_ratio = 500000 / row['Absolute_Avoidance_Total']
-                score = calculate_innovation_fund_score(ce_ratio)
-            else:
-                score = 0
-            innovation_scores.append(score)
-        
-        score_data = sensitivity_data.copy()
-        score_data['Innovation_Fund_Score'] = innovation_scores
-        
-        fig = px.line(
-            score_data,
-            x='Parameter_Value',
-            y='Innovation_Fund_Score',
-            markers=True,
-            title=f'Innovation Fund Score Sensitivity to {param_name}',
-            labels={'Parameter_Value': param_name, 'Innovation_Fund_Score': 'Innovation Fund Score (0-12)'}
-        )
-        
-        fig.add_hline(y=9, line_dash="dash", line_color="green", annotation_text="Excellent (≥9)", 
-                     annotation_position="top right")
-        fig.add_hline(y=6, line_dash="dash", line_color="orange", annotation_text="Good (≥6)", 
-                     annotation_position="top right")
-        fig.add_hline(y=3, line_dash="dash", line_color="red", annotation_text="Marginal (≥3)", 
-                     annotation_position="top right")
-        
-        fig.update_layout(
-            xaxis_title=param_name,
-            yaxis_title='Innovation Fund Score',
-            yaxis=dict(range=[0, 12]),
-            hovermode="x unified"
-        )
-        
-        return fig
-
-    def create_combined_sensitivity_graph(sensitivity_data, param_name):
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(
-            x=sensitivity_data['Parameter_Value'],
-            y=sensitivity_data['Absolute_Avoidance_Total'],
-            mode='lines+markers',
-            name='Total Absolute GHG Avoidance (tCO₂e/year)',
-            line=dict(color='blue')
-        ))
-        fig.add_trace(go.Scatter(
-            x=sensitivity_data['Parameter_Value'],
-            y=sensitivity_data['Manned_CO2_Emissions'],
-            mode='lines+markers',
-            name='Manned CO₂ Emissions (tonnes/year)',
-            line=dict(color='red')
-        ))
-        fig.add_trace(go.Scatter(
-            x=sensitivity_data['Parameter_Value'],
-            y=sensitivity_data['Innovation_Fund_Score'],
-            mode='lines+markers',
-            name='Innovation Fund Score',
-            line=dict(color='green')
-        ))
-        fig.update_layout(
-            title=f'Combined Sensitivity Analysis for {param_name}',
-            xaxis_title=param_name,
-            yaxis_title='Value',
-            hovermode='x unified'
-        )
-        return fig
-
-    def create_emissions_sensitivity_chart(sensitivity_data, param_name):
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(
-            x=sensitivity_data['Parameter_Value'],
-            y=sensitivity_data['Manned_CO2_Emissions'],
-            mode='lines+markers',
-            name='Manned Emissions',
-            line=dict(color='#ff9999', width=2)
-        ))
-        fig.add_trace(go.Scatter(
-            x=sensitivity_data['Parameter_Value'],
-            y=sensitivity_data['Autonomous_CO2_Emissions'],
-            mode='lines+markers',
-            name='Autonomous Emissions',
-            line=dict(color='#66b3ff', width=2)
-        ))
-        fig.add_trace(go.Scatter(
-            x=sensitivity_data['Parameter_Value'],
-            y=sensitivity_data['Manned_CO2_Emissions'],
-            mode='lines',
-            name='Emission Avoidance',
-            fill='tonexty',
-            fillcolor='rgba(0, 255, 0, 0.2)',
-            line=dict(width=0)
-        ))
-        fig.update_layout(
-            title=f'CO₂ Emissions Sensitivity to {param_name}',
-            xaxis_title=param_name,
-            yaxis_title='CO₂ Emissions (tonnes/year)',
-            hovermode="x unified",
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-        )
-        return fig
-
-    def generate_pdf(results, params, lcoe_breakdown):
-        pdf = FPDF()
-        pdf.unifontsubset = False
-        pdf.add_page()
-
-        pdf.add_font("DejaVu", "", "fonts/DejaVuSans.ttf", uni=True)
-        pdf.add_font("DejaVu", "B", "fonts/DejaVuSans-Bold.ttf", uni=True)
-
-        pdf.set_font("DejaVu", "B", 16)
-        pdf.cell(0, 10, "“Green Sentinel” OS4P", ln=True, align="C")
-        pdf.ln(10)
-        pdf.set_font("DejaVu", "B", 14)
-        pdf.cell(0, 10, "Executive Summary", ln=True)
-        pdf.set_font("DejaVu", "", 12)
-        intro_text = (
-            "The Green Sentinel (OS4P) project in Greece aims to significantly reduce CO₂ emissions through the deployment of Offgrid Smart Surveillance Security Sentinel Pylons (OSPs) and the integration of drones for continuous surveillance. "
-            "Renewable Energy Generation and CO₂ Reduction: Each OSP unit is equipped with renewable energy systems that replace diesel generators and power autonomous drone systems, thereby reducing greenhouse gas emissions. "
-            "A full summary of the impact is detailed below. "
-            "Drone Integration for Surveillance and Additional CO₂ Savings: AI-driven drones offer a lower carbon footprint compared to traditional surveillance vehicles. "
-            "Conclusion: By combining renewable energy with drone-based surveillance, the Green Sentinel project enhances operational efficiency and supports climate and decarbonization targets."
-        )
-        pdf.multi_cell(0, 10, intro_text)
-        
-        pdf.ln(5)
-        pdf.set_font("DejaVu", "B", 14)
-        pdf.cell(0, 10, "Overview Metrics", ln=True)
-        pdf.set_font("DejaVu", "", 12)
-        pdf.cell(0, 10, f"Total Absolute GHG Emission Avoidance (tCO₂e/year): {results['ghg_abs_avoidance_total']:.1f}", ln=True)
-        pdf.cell(0, 10, f"Lifetime Absolute GHG Emission Avoidance (tCO₂e): {results['ghg_abs_avoidance_lifetime']:.1f}", ln=True)
-        pdf.cell(0, 10, f"Relative GHG Emission Avoidance (%): {results['ghg_rel_avoidance']:.1f}", ln=True)
-        
-        pdf.ln(5)
-        pdf.set_font("DejaVu", "B", 14)
-        pdf.cell(0, 10, "Cost Metrics", ln=True)
-        pdf.set_font("DejaVu", "", 12)
-        pdf.cell(0, 10, f"Total CAPEX (€): {results['total_capex']:,.0f}", ln=True)
-        pdf.cell(0, 10, f"CAPEX per Outpost (€): {results['total_capex_per_outpost']:,.0f}", ln=True)
-        pdf.cell(0, 10, f"Annual OPEX (€/year): {results['annual_opex']:,.0f}", ln=True)
-        pdf.cell(0, 10, f"OPEX per Outpost (€/year): {results['annual_opex_per_outpost']:,.0f}", ln=True)
-        pdf.cell(0, 10, f"Total Cost of Ownership (€): {results['tco']:,.0f}", ln=True)
-        pdf.cell(0, 10, f"TCO per Outpost (€): {results['tco_per_outpost']:,.0f}", ln=True)
-        
-        pdf.ln(5)
-        pdf.set_font("DejaVu", "B", 14)
-        pdf.cell(0, 10, "Financial Details", ln=True)
-        pdf.set_font("DejaVu", "", 12)
-        pdf.cell(0, 10, f"Total Pilot Cost with Markup (€): {results['pilot_markup']:,.0f}", ln=True)
-        pdf.cell(0, 10, f"Non-unit Cost (€): {results['non_unit_cost']:,.0f}", ln=True)
-        pdf.cell(0, 10, f"Total Pilot Cost (Markup + Overhead) (€): {results['total_pilot_cost']:,.0f}", ln=True)
         pdf.cell(0, 10, f"Grant Coverage (€): {results['total_grant']:,.0f}", ln=True)
         pdf.cell(0, 10, f"Debt Financing Required (€): {results['debt']:,.0f}", ln=True)
         pdf.cell(0, 10, f"Payback Period (years): {results['payback_years']:.1f}", ln=True)
@@ -836,14 +570,18 @@ else:
         with tab_financial_model:
             st.header("Discounted Cash Flow Analysis")
             st.markdown("""
-            [Discounted cash flow analysis explanation...]
+            Once the pilot is constructed, cashflows are generated by the monthly fee per outpost + maintenance fees per outpost.
+            The Total Pilot Cost is financed 60% by the grant and 40% with the loan.
             """)
             discount_rate = interest_rate / 100
             years = loan_years
-            initial_investment = (params["microgrid_capex"] + params["drones_capex"] + params["bos_capex"]) * num_outposts
-            annual_revenue = results["annual_fee_unit"] * 12 * num_outposts
+            # Use the loan amount as the initial investment
+            initial_investment = results["debt"]
+            
+            # Cashflows generated by monthly fee and maintenance fees (maintenance fees become revenue)
+            annual_revenue = (results["monthly_fee_unit"] * 12 * num_outposts) + (maintenance_opex * num_outposts)
             annual_debt_service = results["monthly_debt_payment"] * 12
-            annual_cash_flow = annual_revenue - results["annual_opex"] - annual_debt_service
+            annual_cash_flow = annual_revenue - annual_debt_service
             st.metric("Annual Cash Flow (€)", f"{annual_cash_flow:,.0f}")
             
             npv = -initial_investment
