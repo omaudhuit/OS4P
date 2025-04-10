@@ -452,6 +452,7 @@ else:
             loan_years = st.number_input("Project Loan Years (for financial calculations)", min_value=3, max_value=25, value=10, step=1, format="%d")
             sla_premium = st.number_input("SLA Premium (%)", min_value=0.0, max_value=50.0, value=10.0, step=1.0, format="%.1f")
             non_unit_cost_pct = st.number_input("Non-unit Cost (%)", min_value=0.0, max_value=100.0, value=25.0, step=0.1, format="%.1f")
+            cogs_pct = st.number_input("COGS as % of Total CAPEX", min_value=0.0, max_value=100.0, value=10.0, step=0.1, format="%.1f")
             
             st.subheader("Asset Lifetime")
             lifetime_years = st.number_input("OS4P Unit Lifetime (years)", min_value=1, max_value=50, value=10, step=1, format="%d")
@@ -773,7 +774,7 @@ else:
             
             st.markdown("#### Cost Breakdown")
             # For illustration, we assume:
-            cogs = results["total_capex"] * 0.1       # 10% of total CAPEX
+            cogs = results["total_capex"] * (cogs_pct / 100)
             opex_total = results["annual_opex"]
             sgna = results["total_capex"] * 0.05       # 5% of total CAPEX
             cost_breakdown = {
